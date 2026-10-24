@@ -1,0 +1,45 @@
+{
+  "Tymna Thrasios": {
+    "deck_name": "Tymna Thrasios",
+    "commanders": ["Tymna the Weaver", "Thrasios, Triton Hero"],
+    "summary": "A flexible and resilient midrange deck that blends card draw, ramp, and combo potential to dominate cEDH pods. The deck excels in resource generation and adaptability, allowing it to pivot between control, stax, and explosive combo strategies depending on the game state.",
+    "strategy": "The deck's game plan revolves around leveraging Tymna the Weaver's card draw and Thrasios, Triton Hero's mana sink to develop resources and control the game. Early game efforts focus on efficient ramp and establishing card advantage while deploying stax pieces or interaction to disrupt opponents. As the game progresses, the deck transitions into assembling infinite mana combos or other synergistic lines to secure victory. By adapting to the pod's dynamics, Tymna the Weaver and Thrasios, Triton Hero can execute versatile strategies, ranging from stalling opponents to creating explosive game-ending plays.",
+    "synergies": [
+      {
+        "card": "Seedborn Muse",
+        "description": "Provides unparalleled synergy with Thrasios, Triton Hero, enabling repeated activations during opponents' turns. This generates massive card advantage and mana, allowing the deck to outpace its opponents in resource accumulation."
+      },
+      {
+        "card": "Culling Ritual",
+        "description": "A powerful board wipe and ramp spell, Culling Ritual clears stax pieces, mana rocks, and small creatures while generating a significant burst of mana to transition into a winning turn."
+      }
+    ],
+    "combos": [
+      {
+        "cards": ["Devoted Druid", "Swift Reconfiguration"],
+        "description": "Enchant Devoted Druid with Swift Reconfiguration, turning it into a vehicle. Tap Devoted Druid for green mana. Activate Devoted Druid's untap ability by placing a -1/-1 counter on it. Repeat the process for infinite green mana. Use Thrasios, Triton Hero or other outlets to convert the mana into a win condition.",
+        "steps": 5
+      },
+      {
+        "cards": ["Hazel's Brewmaster", "Devoted Druid"],
+        "description": "Activate Devoted Druid's second ability twice to kill it and put it in your graveyard. Cast Hazel's Brewmaster and target Devoted Druid with the enter the battlefield ability. Create a food token with Devoted Druid's activated abilities. Tap and untap the food token with Devoted Druid's abilities repeatedly, generating infinite green mana. Funnel the mana into Thrasios, Triton Hero or other win conditions.",
+        "steps": 5
+      },
+      {
+        "cards": ["Demonic Consultation", "Thassa's Oracle"],
+        "description": "Cast Thassa's Oracle. While the trigger is on the stack, cast Demonic Consultation or Tainted Pact to exile your library. Resolve Thassa's Oracle's ability to win the game.",
+        "steps": 3
+      }
+    ],
+    "performance": {
+      "conversion_rate": 25.2,
+      "meta_share": 1.5,
+      "range_95": [97, 128],
+      "entrants": 498,
+      "events": 236,
+      "pilots": 309,
+      "timeframe": "180 days through 2026-10-16"
+    },
+    "archetype": "control"
+  }
+}

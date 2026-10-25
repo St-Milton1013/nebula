@@ -46,16 +46,10 @@ Processing (identical for both sources):
 URL detection:
 - Host `moxfield.com` → Moxfield deck
 - Host `decklink.com` → Decklink deck
-- Other hosts → report PARTIAL and continue (see Section 2.2 / 2.5)
+- Other hosts → report PARTIAL and continue (see Section 2.5)
 
 Status: AVAILABLE for both source types.
 
-### 2.2 Kitincode URL
-
-If the user passes a kitincode.com URL, the program:
-1. Sends an HTTP GET request to the URL
-2. Receives HTML (Cloudflare-blocked)
-3. Reports PARTIAL and continues with the decklist file
 
 ### 2.3 Local File
 
@@ -75,7 +69,6 @@ If the user passes a local file path:
 Do NOT build a remote loader class. The URL fetching logic stays local. The program handles:
 - ✓ Decklink URLs (JSON response)
 - ✓ Local file paths (text file with card names)
-- ✗ Kitincode URLs (Cloudflare-blocked — PARTIAL, no action needed)
 
 ### 2.5 Known Limitations
 
@@ -271,7 +264,6 @@ For each URL tested, record a separate verdict:
 | Test | Input | Expected Result | Actual Result |
 |---|---|---|---|
 | Decklink JSON | `https://decklink.com/deck/abc123` | Decklist array | Decklist array |
-| Kitincode (Cloudflare) | `https://www.kitincode.com/decks/xyz789` | PARTIAL | PARTIAL |
 | Moxfield (Cloudflare) | `https://www.moxfield.com/decks/abc` | PARTIAL | PARTIAL |
 | Local file | `test_deck.txt` | Decklist array | Decklist array |
 

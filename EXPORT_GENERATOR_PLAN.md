@@ -24,14 +24,31 @@ No adapter runs in isolation. Every adapter receives the validated, canonicalize
 
 ## 2. Input Handling
 
-### 2.1 Decklink URL
+### 2.1 Link Input (Decklink / Moxfield)
 
-If the user passes a decklink.com URL, the program:
+The program accepts decklist URLs from two supported sources, detected by host:
+
+1. **Moxfield URLs** (`moxfield.com/decks/<id>`) — the most common link format
+   today. The program resolves the decklist JSON via the Moxfield API.
+
+2. **Decklink URLs** (`decklink.com/decks/<id>`) — the legacy format.
+   The program sends an HTTP GET request and receives a JSON payload.
+
+Processing (identical for both sources):
 1. Sends an HTTP GET request to the URL
-2. Receives a JSON payload (decklink returns decklist as JSON)
-3. Parses the JSON to extract the card names
-4. Strips any "count card name" format (e.g., "2 Sol Ring" → "Sol Ring")
-5. Returns a flat array of card names
+2. Receives a JSON payload (decklist data)
+3. Parses the JSON to extract card names and quantities
+4. Normalizes quantities — expands "2 Sol Ring" into two "Sol Ring" entries,
+   and expands "2 basics" into two basic-land entries (generic placeholder; the
+   exact basic lands are resolved during canonicalization in Section 4)
+5. Returns a flat array of card names, with each count expanded
+
+URL detection:
+- Host `moxfield.com` → Moxfield deck
+- Host `decklink.com` → Decklink deck
+- Other hosts → report PARTIAL and continue (see Section 2.2 / 2.5)
+
+Status: AVAILABLE for both source types.
 
 ### 2.2 Kitincode URL
 

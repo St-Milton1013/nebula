@@ -1,0 +1,350 @@
+# NEBULA — Export Generator Plan
+
+**Project:** Nebula Deck Analyzer
+**Format:** Design document / implementation plan (no code)
+**Status:** PLANNED
+**Last updated:** 2026-10-25
+
+---
+
+## 1. Overview
+
+The export generator is the central program of the nebula package. It takes a decklink URL or a local decklist file and outputs a comprehensive report that combines data from all adapters into a single, unified output.
+
+The program follows a linear pipeline:
+1. **Ingest** — read the input (URL or file)
+2. **Validate** — check Commander format
+3. **Canonicalize** — resolve cards to canonical data via Scryfall
+4. **Adapters** — run each adapter in sequence, accumulating results
+5. **Report** — combine all results into a unified output
+
+No adapter runs in isolation. Every adapter receives the validated, canonicalized decklist as input.
+
+---
+
+## 2. Input Handling
+
+### 2.1 Decklink URL
+
+If the user passes a decklink.com URL, the program:
+1. Sends an HTTP GET request to the URL
+2. Receives a JSON payload (decklink returns decklist as JSON)
+3. Parses the JSON to extract the card names
+4. Strips any "count card name" format (e.g., "2 Sol Ring" → "Sol Ring")
+5. Returns a flat array of card names
+
+### 2.2 Kitincode URL
+
+If the user passes a kitincode.com URL, the program:
+1. Sends an HTTP GET request to the URL
+2. Receives HTML (Cloudflare-blocked)
+3. Reports PARTIAL and continues with the decklist file
+
+### 2.3 Local File
+
+If the user passes a local file path:
+1. Reads the file line by line
+2. For each line:
+   - Split on whitespace with maxsplit=1
+   - If the first token is a digit: "count card name" format → expand (repeat card name count times)
+   - If the first token is not a digit: treat the whole line as a card name
+3. Returns a flat array of card names
+
+**Example:** File content "Sol Ring" → `["Sol Ring"]`
+**Example:** File content "2 Sol Ring" → `["Sol Ring", "Sol Ring"]`
+
+### 2.4 Architecture Decision
+
+Do NOT build a remote loader class. The URL fetching logic stays local. The program handles:
+- ✓ Decklink URLs (JSON response)
+- ✓ Local file paths (text file with card names)
+- ✗ Kitincode URLs (Cloudflare-blocked — PARTIAL, no action needed)
+
+### 2.5 Known Limitations
+
+- Moxfield URLs: Cloudflare-blocked, returns 403 → report PARTIAL and continue
+- Archidekt URLs: Cloudflare-blocked, returns 403 → report PARTIAL and continue
+
+---
+
+## 3. Validation
+
+After ingesting the decklist, the program validates the Commander format:
+
+1. **Card count check**: Deck must have 100 cards total (1 commander + 99 mainboard + partners/companions)
+2. **Commander detection**: Exactly 1 commander card in the deck
+3. **Singleton rules**: No duplicate non-commander cards
+4. **Color identity**: Commander color identity (from cached card data)
+5. **Banned cards**: Check against the Commander ban list (if cached)
+
+**Output:** A validation report with:
+- Status: AVAILABLE / PARTIAL (for any format issue found)
+- Card count
+- Commander count
+- Duplicates list (if any)
+- Color identity
+- Banned cards (if any)
+
+---
+
+## 4. Canonicalization
+
+After validation, the program canonicalizes each card using the Scryfall adapter:
+
+1. For each card name in the decklist, look up card data in the local cache
+2. If not in cache, query the Scryfall API
+3. Extract the following fields:
+   - name
+   - mana_cost
+   - cmc
+   - color_identity
+   - type_line
+   - edhrec_rank
+   - keywords
+   - oracle_text_preview
+   - status
+
+**Output:** A canonicalized card list with full card facts for each card.
+
+---
+
+## 5. Adapter Pipeline
+
+The program runs all adapters in sequence. Each adapter receives the validated, canonicalized decklist.
+
+### 5.1 Adapter Run Order
+
+| Order | Adapter | Input | Output |
+|---|---|---|---|
+| 1 | `deck_validator` | Decklist | Format validation results |
+| 2 | `scryfall` | Decklist + cache | Card info for each card |
+| 3 | `tagger` | Card names | Tag data for each card |
+| 4 | `commander_spellbook` | Cards | Combo data |
+| 5 | `hypercalculator` | Cards + tags | Probability data |
+| 6 | `meta_compare` | Commander | Meta context |
+| 7 | `learncedh` | Decklist | Deck summary |
+
+### 5.2 Adapter Details
+
+#### 5.2.1 Deck Validator
+- Validates Commander format rules
+- Returns: card_count, commander_count, duplicates, color_identity, banned, format_legal
+- Status: AVAILABLE / PARTIAL
+
+#### 5.2.2 Scryfall
+- Looks up each card in the local cache
+- Falls back to Scryfall API if not in cache
+- Filters out artwork tags
+- Returns: card info + tags for each card
+
+#### 5.2.3 Tagger
+- Queries tagger.scryfall.com for card tags
+- Filters out artwork tags (visual only)
+- Returns: card_tags, inherited_card_tags
+
+#### 5.2.4 Commander Spellbook
+- Queries the REST API at backend.commanderspellbook.com
+- Finds combos involving the cards
+- Returns: combo data (cards, steps, resolution order)
+
+#### 5.2.5 Hypercalculator
+- Computes tag-based probabilities
+- Uses hypergeometric distribution
+- Returns: tag_draw_probability, opening_hand_distribution, combo_tag_chances
+
+#### 5.2.6 Meta Compare
+- Fetches CEDHStats data
+- Returns: aggregate stats, seat breakdown, draw dynamics
+
+#### 5.2.7 LearnCEDH
+- Fetches deck summary from LearnCEDH
+- Returns: conversion rate, meta share, 95% range
+
+### 5.3 Continuity
+
+If an adapter is unable to run:
+- Mark its status as PARTIAL
+- Include a caveat explaining why
+- Continue to the next adapter
+- Do NOT return early
+
+---
+
+## 6. Report Generation
+
+After all adapters run, the program combines the results into a unified report.
+
+### 6.1 Report Structure
+
+The report has the following top-level sections:
+
+1. **Header**
+   - Report title
+   - Generated timestamp
+   - Source (decklink URL or file path)
+
+2. **Deck Summary**
+   - Total card count
+   - Commander count
+   - Deck name (if available)
+
+3. **Adapter Summary**
+   - For each adapter: status, key data
+   - Status: AVAILABLE / PARTIAL / UNSUPPORTED
+
+4. **Adapter Details**
+   - For each adapter: full output
+   - Structured data for further processing
+
+5. **Caveats**
+   - List of caveats from all adapters
+   - Example: "Commander ban list not cached; banned-card check is PARTIAL"
+
+6. **Decklist**
+   - The full decklist (for verification)
+
+### 6.2 Output Format
+
+Two output formats are supported:
+
+| Format | Output | Use case |
+|---|---|---|
+| Text | Human-readable summary | Console display |
+| JSON | Structured data | Machine processing, further analysis |
+
+### 6.3 File Output
+
+When outputting in JSON format:
+1. Write to the specified output file
+2. File name: derived from the source (decklink URL or file path)
+3. Content: the full report in JSON format
+
+---
+
+## 7. Single-File Package
+
+The export generator can also generate a single-file package that contains all adapters in one file.
+
+### 7.1 How It Works
+
+1. The main program is `export_generator.py`
+2. All adapter modules are combined into `nebula_package_single.py`
+3. The single file is self-contained (no external imports)
+4. The single file can be distributed and used without the original repo
+
+### 7.2 Generation
+
+The single-file package is generated via:
+```bash
+python export_generator.py --single nebula_package_single.py
+```
+
+---
+
+## 8. Test Reporting
+
+### 8.1 Test Results Directory
+
+All test results are saved to `test_results/` (relative to the repo).
+
+### 8.2 Test Cases
+
+For each URL tested, record a separate verdict:
+
+| Test | Input | Expected Result | Actual Result |
+|---|---|---|---|
+| Decklink JSON | `https://decklink.com/deck/abc123` | Decklist array | Decklist array |
+| Kitincode (Cloudflare) | `https://www.kitincode.com/decks/xyz789` | PARTIAL | PARTIAL |
+| Moxfield (Cloudflare) | `https://www.moxfield.com/decks/abc` | PARTIAL | PARTIAL |
+| Local file | `test_deck.txt` | Decklist array | Decklist array |
+
+### 8.3 Test Report Requirements
+
+Every test report must contain:
+- Per-card records with fields: name, source, status, mana_cost, cmc, color_identity, edhrec_rank, type_line
+- Adapter summary stats (e.g., # cards in local cache, # cards missing)
+- Deck summary: card count, decklist array, status
+
+A test report that only shows `[AVAILABLE] scryfall` with no card records is incomplete.
+
+---
+
+## 9. End-to-End Run
+
+The program must be run end-to-end and produce output before the package is declared done.
+
+### 9.1 Minimum Run
+
+Run the program with a test decklist:
+```bash
+python export_generator.py --decklist test_deck.txt --output deck.json --format json
+```
+
+### 9.2 Verification
+
+The run must:
+1. Ingest the decklist
+2. Validate the format
+3. Canonicalize the cards
+4. Run all 7 adapters
+5. Generate the unified report
+6. Write the output file
+
+---
+
+## 10. Design Document Reference
+
+The following design documents contain the detailed spec for each adapter:
+
+| Document | Adapter | Key Design Decisions |
+|---|---|---|
+| NEBULA-DECKVALIDATOR.md | deck_validator | Format rules, singleton, color identity |
+| NEBULA-SCRYFALL.md | scryfall | Cache lookup, API fallback, tag filtering |
+| NEBULA-TAGGER.md | tagger | Tag filter (artwork excluded), card + inherited tags |
+| NEBULA-COMMANDER-SPELLBOOK.md | commander_spellbook | REST API endpoints |
+| NEBULA-HYPERCALCULATOR.md | hypercalculator | Tag-based probability, hypergeometric |
+| NEBULA-META-COMPARE.md | meta_compare | CEDHStats data source |
+| NEBULA-LEARNCEDH.md | learncedh | Deck summary, performance metrics |
+
+---
+
+## 11. Git Workflow
+
+### 11.1 Branch Strategy
+
+- `master` branch: production code
+- `develop` branch: feature development (optional)
+- Feature branches: for new features (optional)
+
+### 11.2 Commit Messages
+
+Use conventional commit messages:
+- `feat: add export generator`
+- `fix: correct tagger output format`
+- `docs: update export generator plan`
+- `test: add test deck and results`
+
+### 11.3 Push to GitHub
+
+After committing:
+```bash
+git add -A
+git commit -m "message"
+git push origin master
+```
+
+---
+
+## 12. Summary
+
+The export generator is the single entry point for the nebula package. It:
+1. Takes a decklink URL or local decklist file
+2. Validates the Commander format
+3. Canonicalizes cards via Scryfall
+4. Runs all 7 adapters in sequence
+5. Combines results into a unified report
+6. Outputs as text or JSON
+
+The program follows a linear, deterministic pipeline with no branching logic. Each adapter receives the same validated, canonicalized input. The final report combines all adapter outputs into a cohesive document.
+
+---

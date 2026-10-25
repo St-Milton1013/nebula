@@ -44,20 +44,30 @@ from archetype.meta_compare import num_adapter as meta_compare_adapter
 
 
 def load_deck_from_file(filepath):
-    """Load a decklist from a text file."""
+    """Load a decklist from a text file.
+    Supports:
+    - 'count card name' format (e.g., '4 Sol Ring' = 4 copies)
+    - 'card name' format (e.g., 'Sol Ring' = 1 copy)
+    - One card per line
+    """
     with open(filepath) as f:
         content = f.read()
-    # Parse card names (one per line, or "count card name" format)
     cards = []
     for line in content.splitlines():
         line = line.strip()
         if not line or line.startswith('#'):
             continue
+        # Try to detect 'count card name' format
+        # Split on whitespace, but we need to check if the first token is a number
         parts = line.split(None, 1)
         if len(parts) == 2:
-            count, name = parts
-            # Expand: add card name 'count' times
-            cards.extend([name.strip()] * int(count))
+            count_str, name = parts
+            if count_str.isdigit():
+                # It's a count card name format
+                cards.extend([name.strip()] * int(count_str))
+            else:
+                # Just a card name with spaces - treat as single card
+                cards.append(line)
         else:
             cards.append(line)
     return cards

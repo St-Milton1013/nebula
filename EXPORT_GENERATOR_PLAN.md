@@ -24,9 +24,9 @@ No adapter runs in isolation. Every adapter receives the validated, canonicalize
 
 ## 2. Input Handling
 
-### 2.1 Link Input (Decklink / Moxfield)
+### 2.1 Link Input (Decklink / Moxfield / Other)
 
-The program accepts decklist URLs from two supported sources, detected by host:
+The program accepts decklist URLs from multiple sources, detected by host:
 
 1. **Moxfield URLs** (`moxfield.com/decks/<id>`) — the most common link format
    today. The program resolves the decklist JSON via the Moxfield API.
@@ -34,13 +34,21 @@ The program accepts decklist URLs from two supported sources, detected by host:
 2. **Decklink URLs** (`decklink.com/decks/<id>`) — the legacy format.
    The program sends an HTTP GET request and receives a JSON payload.
 
-Processing (identical for both sources):
-1. Sends an HTTP GET request to the URL
-2. Receives a JSON payload (decklist data)
-3. Parses the JSON to extract card names and quantities
+3. **Library-Based Parsers (mtg-parser)** — for any other URL (e.g.,
+   archidekt.com, moxfield.com, mtggoldfish.com, tappedout.net, etc.),
+   the program uses the `mtg-parser` Python library to fetch and parse
+   the decklist. Supported sites include aetherhub.com, archidekt.com,
+   deckstats.net, moxfield.com, mtggoldfish.com, mtgjson.com,
+   scryfall.com, tappedout.net, tcgplayer.com.
+
+Processing (identical for all sources):
+1. Sends an HTTP GET request to the URL (using the appropriate client
+   for each site — e.g., cloudscraper for Cloudflare-protected sites)
+2. Receives a JSON payload or HTML with decklist data
+3. Parses the decklist to extract card names and quantities
 4. Normalizes quantities — expands "2 Sol Ring" into two "Sol Ring" entries,
-   and expands "2 basics" into two basic-land entries (generic placeholder; the
-   exact basic lands are resolved during canonicalization in Section 4)
+   and expands "2 basics" into two basic-land entries (generic placeholder;
+   the exact basic lands are resolved during canonicalization in Section 4)
 5. Returns a flat array of card names, with each count expanded
 
 URL detection:

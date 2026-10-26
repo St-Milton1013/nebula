@@ -182,7 +182,7 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 | 5. **hypercalculator** | Validated cards + tags | tagger.scryfall.com (tags) | tagger.scryfall.com | Probability data (tag_draw_probability, opening_hand_distribution, combo_tag_chances) |
 | 6. **meta_compare** | Commanders + validated layout | CEDHStats.org + EDHTop16.com | cedhstats.org, cedhtop16.com | Meta context (aggregate stats, seat breakdown, draw dynamics) |
 | 7. **learncedh** | Validated decklist | GitHub JSON + LearnCEDH website | learncedh.com, GitHub (ranked-decks.json) | Deck summary (conversion rate, meta share, 95% range) |
-| 8. **commander_top16_pool** | Commander name(s) | EDHTop16.com | edhtop16.com | Commander-specific card frequency pool (structured data) |
+| 8. **commander_top16_pool** | Commander name(s) | EDHTop16.com (+ cached TopDeck data) | edhtop16.com, local cache | Commander-specific card frequency pool (structured data); reuses `archetype.meta_compare` / `topdeck_integration.py` |
 
 ### 5.2 Adapter Details
 
@@ -302,13 +302,14 @@ seat breakdown, draw dynamics, and card context into a unified report.
 **- Fetches:** Commander-specific card frequency data from eligible EDHTop16 tournament decklists
 **- Returns:** Structured frequency pool: card identities (canonical Oracle IDs), eligible list count, frequency as proportion/percentage, source, timestamp, tournament time window, and filtering criteria
 **- Source label:** edhtop16.com
+**- Reference:** `archetype.meta_compare` adapter; frequency-pool design in `NEBULA-FREQUENCY-POOL.md`; `topdeck_integration.py` (cached TopDeck data → frequency computation)
 
 **Objective:** Provide a commander-specific, evidence-backed view of cards appearing in relevant tournament decklists, to support further deck analysis and comparisons.
 
 **Required behavior:**
 
 1. **Identify the commander** from the submitted deck (after validation).
-2. **Retrieve Top16 data** using the Codie frequency-pool methodology. Verify the implementation and data requirements before relying on the adapter.
+2. **Retrieve Top16 data** using the existing Codie frequency-pool methodology (`archetype.meta_compare` / `topdeck_integration.py`). Verify implementation and data requirements before relying on the adapter.
 3. **Calculate card frequencies** from eligible tournament decklists. Frequency is the proportion of eligible lists containing a card, unless the existing Codie methodology explicitly defines a different measure.
 4. **Preserve provenance:** source, retrieval timestamp, tournament time window, sample size, and filtering criteria.
 5. **Include as structured data** in the generated package (not just prose or a summary).
@@ -316,29 +317,11 @@ seat breakdown, draw dynamics, and card context into a unified report.
 7. **Report unavailable or insufficient data explicitly.** Do not fabricate frequencies or silently substitute a different population.
 8. **Reuse eligible captured data** where possible to avoid unnecessary requests.
 
-**Handling of special cases (must be defined in implementation):**
-
-- **Duplicate entries:** Multiple entries in a single decklist from the same decklist are counted once. Only the presence of a card in an eligible list matters for frequency.
-- **Card quantities:** Quantities are ignored for frequency calculation. A card present in a list is counted as 1, regardless of copy count.
-- **Partner commanders:** If the submitted deck contains partners or companions alongside the commander, the frequency pool is based on the main commander only. Partner/companion cards are not used to compute or influence the commander's frequency pool.
-- **Other commander-specific cases:** When multiple commanders are present, the pool is computed for each commander separately and labeled accordingly. The adapter must not mix data from different commanders.
-
-**Metric definitions (contract):**
-
-| Metric | Population | Sample Size | Excluded Cards | Mathematical Event | Assumptions |
-|---|---|---|---|---|---|
-| Card frequency | All eligible EDHTop16 tournament decklists for the commander | One eligible decklist = 1 unit | Cards with the commander's card identity only; excluded: non-eligible lists (out of time window, below participant threshold, unmatched commander) | Frequency = (number of eligible lists containing card) / (total eligible lists) | Each eligible list is independent; card presence is binary (1 if present, 0 if absent); multiple copies in a list do not change the binary count |
-
-**Important limitations:**
-
-- **Unavailable or insufficient data:** If the Top16 dataset is insufficient (e.g., no tournament data for the commander, fewer than the minimum eligible list threshold), the adapter reports PARTIAL/UNSUPPORTED with an explicit reason. Do not fabricate or substitute data from a different commander or format.
-- **Sample size:** The adapter must report the number of eligible lists analyzed. If this is below a safety threshold, the frequency estimates are unreliable and must be flagged as such.
-- **Reproducibility:** The adapter must work from recorded/captured data when available. Re-running the adapter must reproduce the same results from the same captured data without making new live requests.
-- **Data source changes:** Any changes to the Codie frequency-pool methodology or data requirements must be documented, tested, and noted in the adapter's caveats.
+**Implementation notes:** All TopDeck/EDHTop16 data is already cached locally (`config/topdeck_tournament_top16.json` / `config/topdeck_events.json`). The adapter reuses captured data by default and does not make live API calls. Special-case handling (duplicate entries, card quantities, partner commanders, multiple commanders) is defined in `NEBULA-FREQUENCY-POOL.md` (Step 5.3); the plan document references that design rather than restating it. The frequency pool is the meta reference (card frequency), not the archetype distribution.
 
 **Input:** Commander name(s) from the validated deck; optionally, previously captured EDHTop16 tournament data.
 
-**Dependency:** Requires Command (after validation). Reuses captured data where available; otherwise queries edhtop16.com (public data). See Section 5.3 (Continuity) for PARTIAL/FAIL handling.
+**Dependency:** Requires Command (after validation). Uses captured/cached data; does not make live API calls. See Section 5.3 (Continuity) for PARTIAL/FAIL handling.
 
 - **Source:** GitHub `ranked-decks.json` + LearnCEDH website (learncedh.com)
 - Fetches deck summary from LearnCEDH (learncedh.com), the cEDH community deck statistics platform

@@ -86,16 +86,29 @@ Do NOT build a remote loader class. The URL fetching logic stays local. The prog
 
 After ingesting the decklist, the program validates the Commander format:
 
-1. **Card count check**: Deck must have 100 cards total (1 commander + 99 mainboard + partners/companions)
-2. **Commander detection**: Exactly 1 commander card in the deck
-3. **Singleton rules**: No duplicate non-commander cards
-4. **Color identity**: Commander color identity (from cached card data)
-5. **Banned cards**: Check against the Commander ban list (if cached)
+1. **Card count check**: Deck must have 100 cards total (1 commander + 99 mainboard), optionally including partners/companions
+2. **Commander detection**: Exactly 1 commander card in the deck (a commander pair counts as 2)
+3. **Partner/companion detection**: Partners and companions are allowed in Commander format
+4. **Singleton rules**: No duplicate non-commander cards, EXCEPT basic lands (including Snow-Covered) and cards with "this can have any number in a deck"
+5. **Color identity**: Derived from the commander's color identity. Partner color identity combines with the commander's; if a partner has a different color identity, the combined identity is used for all cards
+6. **Banned cards**: Check against the Commander ban list (if cached)
+
+**validate_deck tool**: The program uses the `validate_deck` tool from the mtg-mcp package (nathanmartins/mtg-mcp) for Commander format validation. This tool:
+
+- 100-card deck size check
+- Commander eligibility (rule 903.3) and ban check
+- Singleton rule, exempting basic lands (including Snow-Covered) and cards like Relentless Rats
+- Every card checked against the commander's color identity and the Commander banned list
+- Flags names Scryfall does not recognize
+- Looks cards up in batches of 75, so a full deck costs two Scryfall requests
+- Supports JSON array or text format decklists
 
 **Output:** A validation report with:
+
 - Status: AVAILABLE / PARTIAL (for any format issue found)
 - Card count
 - Commander count
+- Partners/companions count
 - Duplicates list (if any)
 - Color identity
 - Banned cards (if any)

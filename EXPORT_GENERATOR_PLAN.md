@@ -82,13 +82,10 @@ Do NOT build a remote loader class. The URL fetching logic stays local. The prog
 
 ### 2.5 Known Limitations
 
-- Moxfield URLs: direct HTTP fetch returns Cloudflare (403). Use MCP
-  `get_moxfield_deck` (MTG MCP) as the primary ingestion path — call it
-  with the deck URL. Fallback only if MCP returns empty/fail: paste the
-  decklist directly.
-- Archidekt URLs: direct HTTP fetch returns Cloudflare (403). Use MCP
-  `get_archidekt_deck` (MTG MCP) as the primary ingestion path — call it
-  with the deck URL. Fallback only if MCP returns empty/fail: paste decklist
+- Moxfield and Archidekt URLs: direct HTTP fetch returns Cloudflare (403).
+  Use the respective MCP tools (`get_moxfield_deck`, `get_archidekt_deck`)
+  from the MTG MCP as the primary ingestion path — call it with the deck
+  URL. Fallback only if MCP returns empty/fail: paste the decklist directly.
 
 ---
 
@@ -122,6 +119,7 @@ After ingesting the decklist, the program validates the Commander format:
 - Duplicates list (if any)
 - Color identity
 - Banned cards (if any)
+- Format legality (format_legal)
 
 ---
 
@@ -158,7 +156,7 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 | Order | Adapter | Input | Output |
 |---|---|---|---|
 1. **deck_validator** | Decklink (flat card array) | Format validation results (status, card count, commander count, duplicates, color identity, banned cards) |
-2. **scryfall** | Validated decklist + cache | Card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, edhrec_rank, keywords, oracle_text_preview, status) for each card |
+2. **scryfall** | Validated decklist + cache | Card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, keywords, oracle_text_preview, status) for each card |
 3. **tagger** | Validated card names | Tag data for each card (card_tags, inherited_card_tags) |
 4. **commander_spellbook** | Validated cards (by oracle_id) | Combo data (cards, steps, resolution order) |
 5. **hypercalculator** | Validated cards + tags | Probability data (tag_draw_probability, opening_hand_distribution, combo_tag_chances) |
@@ -419,7 +417,7 @@ adapter order, followed by the Caveats section:
 1. **Deck Validator** — format status, card count, commander count,
    duplicates, color identity, banned cards
 2. **Scryfall** — card facts per card (oracle_id, name, mana_cost, cmc,
-   color_identity, type_line, edhrec_rank, keywords, oracle_text_preview,
+   color_identity, type_line, keywords, oracle_text_preview,
    status)
 3. **Tagger** — card_tags, inherited_card_tags
 4. **Commander Spellbook** — combos found (cards, steps, resolution order)
@@ -467,16 +465,27 @@ The export generator can also generate a single-file package that contains all a
 1. The main program is `export_generator.py`
 2. All adapter modules are combined into `nebula_package_single.py`
 3. The single file is self-contained (no external imports)
-4. The single file can be distributed and used without the original repo
-
-### 7.2 Generation
-
 The single-file package is generated via:
 ```bash
 python export_generator.py --single nebula_package_single.py
 ```
 
----
+**Naming:** The generated file uses the same naming convention as the
+text output (`YYYY-MM-DD_Commanders_HHMMSS.txt`), with the extension
+`.py`:
+
+- Pattern: `YYYY-MM-DD_Commanders_HHMMSS_nebula_package_single.py`
+- **Date** — generation date, `YYYY-MM-DD`
+- **Commanders** — the deck's commander name(s), taken verbatim from the
+  validated deck, space-joined (e.g. `Arcum Dagsson`, `Korvold Warped
+  Eclipse`). Illegal file-name characters are replaced with `-`.
+- **Time** — local time, `HHMMSS`
+
+Example: `2026-10-26_Arcum Dagsson_281702_nebula_package_single.py`
+Example: `2026-10-26_Korvold Warped Eclipse_281702_nebula_package_single.py`
+
+The single-file package is self-contained (no external imports) and can be
+distributed and used without the original repo.
 
 ## 8. Test Reporting
 

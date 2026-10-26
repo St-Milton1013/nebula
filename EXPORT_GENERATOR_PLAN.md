@@ -320,35 +320,7 @@ The deck summary display uses:
 
 ---
 
-### Test Results: Arcum Dagsson
 
-**Source:** `https://learncedh.com/decklists?author=arcum-dagsson`
-
-**Findings:**
-- LearnCEDH is functional and loads deck data via the GitHub-hosted `ranked-decks.json`
-- Found 1 deck by Arcum Dagsson:
-  - **Deck name:** Arcum Dagsson
-  - **Conversion rate:** 28.17% (0.28169014084507044)
-  - **Meta share:** 0.34% (0.0033971291866028708)
-- The site displays these values in the deck summary section using element IDs `#deck-conversion-rate` and `#deck-metashare`
-
-**Deck Page Text Excerpts:**
-The deck detail page contains rich text explanations including:
-- **Core Gameplan:** Develop artifact mana and creatures you can sacrifice, then get Arcum ready to activate. His first search should address the table: a hate piece against an imminent win, card draw for a longer game, or a combo piece when you can finish.
-- **Strengths:** Repeatable Tutor (any noncreature artifact every untap with fodder), Big Artifacts for Free (Portal to Phyrexia at the price of an Ornithopter), Mana for Interaction (no mana cost for the fetch ability).
-- **Weaknesses:** Commander Dependent (needs fodder and timing), Artifact Hate (Collector Ouphe, Null Rod, Kataki tax artifacts), Little Card Draw (mostly mana, fodder, and fetch targets).
-- **Core Combos:** Filigree Sages + Chromatic Orrery (infinite mana loop), Mind Over Matter + The One Ring (card draw), Staff of Domination + Metalworker (infinite mana loop), Staff of Domination + Clock of Omens + Sculpting Steel + Grim Monolith/Mana Vault (combo with multiple infinite loops).
-- **Win Conditions:** Walking Ballista (finishing ability), Portal to Phyrexia (slow win via reanimation), Creature Lands (Inkmoth Nexus, Blinkmoth Nexus, Mishra's Factory).
-
-**95% Range:**
-- LearnCEDH does NOT provide the 95% confidence range in its data
-- The site only exposes conversion rate and meta share
-- To compute the 95% range, you must query EDHTop16 for the underlying match data (games, wins, draws, losses) and calculate:
-  - `p = wins / total_games` (win rate)
-  - `n = total_games` (sample size)
-  - 95% CI = `p ± 1.96 * sqrt(p * (1-p) / n)`
-
----
 
 ### Implementation Notes
 

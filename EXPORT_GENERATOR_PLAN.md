@@ -129,7 +129,6 @@ After validation, the program canonicalizes each card using the Scryfall adapter
    - cmc
    - color_identity
    - type_line
-   - edhrec_rank
    - keywords
    - oracle_text_preview
    - status
@@ -164,19 +163,8 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 #### 5.2.2 Scryfall
 - Looks up each card in the local cache by oracle_id
 - Falls back to Scryfall API if not in cache
-- Extracts the following fields from Scryfall:
-  - oracle_id (primary key)
-  - name
-  - mana_cost
-  - cmc
-  - color_identity
-  - type_line
-  - edhrec_rank
-  - keywords
-  - oracle_text_preview
-  - status
-- Notes: artwork tags (visual-only) are filtered out; tags belong to the tagger adapter only
-- Returns: card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, edhrec_rank, keywords, oracle_text_preview, status) for each card, keyed by oracle_id
+- Data extraction details: see Section 4 (Canonicalization)
+- Returns: card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, keywords, oracle_text_preview, status) for each card, keyed by oracle_id
 
 > Note: `tagger` (Section 5.2.3) is responsible for card tags. Scryfall provides card data only; do not include tags here.
 
@@ -303,7 +291,7 @@ For each URL tested, record a separate verdict:
 ### 8.3 Test Report Requirements
 
 Every test report must contain:
-- Per-card records with fields: name, source, status, mana_cost, cmc, color_identity, edhrec_rank, type_line
+- Per-card records with fields: name, source, status, mana_cost, cmc, color_identity, type_line
 - Adapter summary stats (e.g., # cards in local cache, # cards missing)
 - Deck summary: card count, decklist array, status
 

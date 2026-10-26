@@ -29,17 +29,19 @@ No adapter runs in isolation. Every adapter receives the validated, canonicalize
 The program accepts decklist URLs from multiple sources, detected by host:
 
 1. **Moxfield URLs** (`moxfield.com/decks/<id>`) — the most common link format
-   today. The program resolves the decklist JSON via the Moxfield API.
+   today. The program resolves the decklist via the Moxfield API (MCP
+   `get_moxfield_deck`), bypassing Cloudflare. Although mtg-parser lists
+   `moxfield.com` as a supported site, Moxfield's Terms of Service prohibit
+   scraping, so we use the official API path instead. Fallback: paste decklist.
 
 2. **Decklink URLs** (`decklink.com/decks/<id>`) — the legacy format.
    The program sends an HTTP GET request and receives a JSON payload.
 
 3. **Library-Based Parsers (mtg-parser)** — for any other URL (e.g.,
-   archidekt.com, moxfield.com, mtggoldfish.com, tappedout.net, etc.),
-   the program uses the `mtg-parser` Python library to fetch and parse
-   the decklist. Supported sites include aetherhub.com, archidekt.com,
-   deckstats.net, moxfield.com, mtggoldfish.com, mtgjson.com,
-   scryfall.com, tappedout.net, tcgplayer.com.
+   archidekt.com, mtggoldfish.com, tappedout.net, etc.), the program uses
+   the `mtg-parser` Python library to fetch and parse the decklist.
+   Supported sites include aetherhub.com, archidekt.com, deckstats.net,
+   mtggoldfish.com, mtgjson.com, scryfall.com, tappedout.net, tcgplayer.com.
 
 Processing (identical for all sources):
 1. Sends an HTTP GET request to the URL (using the appropriate client

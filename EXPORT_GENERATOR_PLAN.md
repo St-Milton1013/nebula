@@ -135,7 +135,7 @@ After validation, the program canonicalizes each card using the Scryfall API.
    - oracle_text_preview
    - status
 
-Output: A canonicalized card list with full card facts for each card, keyed by oracle_id.
+Output: A canonicalized card list with full card facts for each card, keyed by oracle_id. This output is saved and referenced by all downstream adapters.
 
 ---
 

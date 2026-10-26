@@ -121,7 +121,9 @@ After validation, the program canonicalizes each card using the Scryfall adapter
 
 1. For each card name in the decklist, look up card data in the local cache
 2. If not in cache, query the Scryfall API
-3. Extract the following fields:
+3. **Primary reference**: Use the Scryfall `oracle_id` as the internal card identifier for all downstream adapters
+4. Extract the following fields:
+   - oracle_id (primary key)
    - name
    - mana_cost
    - cmc
@@ -132,7 +134,7 @@ After validation, the program canonicalizes each card using the Scryfall adapter
    - oracle_text_preview
    - status
 
-**Output:** A canonicalized card list with full card facts for each card.
+Output: A canonicalized card list with full card facts for each card, keyed by oracle_id.
 
 ---
 

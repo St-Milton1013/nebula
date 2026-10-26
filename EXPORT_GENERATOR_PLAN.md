@@ -162,10 +162,23 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 - Status: AVAILABLE / PARTIAL
 
 #### 5.2.2 Scryfall
-- Looks up each card in the local cache
+- Looks up each card in the local cache by oracle_id
 - Falls back to Scryfall API if not in cache
-- Filters out artwork tags
-- Returns: card info + tags for each card
+- Extracts the following fields from Scryfall:
+  - oracle_id (primary key)
+  - name
+  - mana_cost
+  - cmc
+  - color_identity
+  - type_line
+  - edhrec_rank
+  - keywords
+  - oracle_text_preview
+  - status
+- Notes: artwork tags (visual-only) are filtered out; tags belong to the tagger adapter only
+- Returns: card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, edhrec_rank, keywords, oracle_text_preview, status) for each card, keyed by oracle_id
+
+> Note: `tagger` (Section 5.2.3) is responsible for card tags. Scryfall provides card data only; do not include tags here.
 
 #### 5.2.3 Tagger
 - Queries tagger.scryfall.com for card tags

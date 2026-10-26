@@ -173,44 +173,56 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 
 ### 5.1 Adapter Run Order
 
-| Order | Adapter | Input | Output |
-|---|---|---|---|
-1. **deck_validator** | Decklink (flat card array) | Format validation results (status, card count, commander count, duplicates, color identity, banned cards) |
-2. **scryfall** | Validated decklist + cache | Card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, keywords, oracle_text_preview, status) for each card |
-3. **tagger** | Validated card names | Tag data for each card (card_tags, inherited_card_tags) |
-4. **commander_spellbook** | Validated cards (by oracle_id) | Combo data (cards, steps, resolution order) |
-5. **hypercalculator** | Validated cards + tags | Probability data (tag_draw_probability, opening_hand_distribution, combo_tag_chances) |
-6. **meta_compare** | Commanders + validated layout | Meta context (aggregate stats, seat breakdown, draw dynamics) |
-7. **learncedh** | Validated decklist | Deck summary (conversion rate, meta share, 95% range) |
+| Order | Adapter | Input | Source | Output |
+|---|---|---|---|---|
+| 1. **deck_validator** | Decklink (flat card array) | Decklink JSON | decklink.com | Format validation results (status, card count, commander count, duplicates, color identity, banned cards) |
+| 2. **scryfall** | Validated decklist + cache | Scryfall API | scryfall.com | Card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, keywords, oracle_text_preview, status) for each card |
+| 3. **tagger** | Validated card names | tagger.scryfall.com API | tagger.scryfall.com | Tag data for each card (card_tags, inherited_card_tags) |
+| 4. **commander_spellbook** | Validated cards (by oracle_id) | REST API | backend.commanderspellbook.com | Combo data (cards, steps, resolution order) |
+| 5. **hypercalculator** | Validated cards + tags | tagger.scryfall.com (tags) | tagger.scryfall.com | Probability data (tag_draw_probability, opening_hand_distribution, combo_tag_chances) |
+| 6. **meta_compare** | Commanders + validated layout | CEDHStats.org + EDHTop16.com | cedhstats.org, cedhtop16.com | Meta context (aggregate stats, seat breakdown, draw dynamics) |
+| 7. **learncedh** | Validated decklist | GitHub JSON + LearnCEDH website | learncedh.com, GitHub (ranked-decks.json) | Deck summary (conversion rate, meta share, 95% range) |
 
 ### 5.2 Adapter Details
 
 #### 5.2.1 Deck Validator
+
+- **Source:** Decklink JSON (decklink.com)
 - Validates Commander format rules
 - Returns: card_count, commander_count, duplicates, color_identity, banned, format_legal
 - Status: AVAILABLE / PARTIAL
 
 #### 5.2.2 Scryfall
+
+- **Source:** Scryfall API (scryfall.com)
 - Looks up each card in the local cache by oracle_id
 - Falls back to Scryfall API if not in cache
 - Data extraction details: see Section 4 (Canonicalization)
 - Returns: card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, keywords, oracle_text_preview, status) for each card, keyed by oracle_id
+- Source label: scryfall.com
 
 > Note: `tagger` (Section 5.2.3) is responsible for card tags. Scryfall provides card data only; do not include tags here.
 
 #### 5.2.3 Tagger
+
+- **Source:** tagger.scryfall.com API
 - Queries tagger.scryfall.com for card tags
 - Filters out artwork tags (visual only)
 - Returns: card_tags, inherited_card_tags
+- Source label: tagger.scryfall.com
 
 > Reference: [mtg_ultimate_tag](https://github.com/benjamin-fouilleul/mtg_ultimate_tag) — Elixir + Phoenix web app that scrapes tags from `tagger.scryfall.com` for decklists. Confirms `tagger.scryfall.com` as the correct tag source.
 
 #### 5.2.4 Commander Spellbook
-- Queries the REST API at backend.commanderspellbook.com
+
+- **Source:** REST API (backend.commanderspellbook.com)
 - Finds combos involving the cards
 - Returns: combo data (cards, steps, resolution order)
+- Source label: backend.commanderspellbook.com
 
-#### 5.2.2 Hypercalculator
+#### 5.2.5 Hypercalculator
+
+- **Source:** tagger.scryfall.com (card tags); local computation
 - Computes tag-based probabilities using the hypergeometric distribution
 - Default hand size: 7 cards
 - Input: validated mainboard cards only (commander(s) and companions excluded)
@@ -239,9 +251,12 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 **Dependency:** Requires the tagger section (5.2.3) to provide card tags.
 
 #### 5.2.6 Meta Compare
+
+- **Source:** CEDHStats.org + EDHTop16.com
 - Fetches CEDHStats data (cedhstats.org) and/or EDHTop16 data (cedhtop16.com)
 - Returns: aggregate stats, seat breakdown, draw dynamics, meta share, board
   (power level), decklist context
+- Source label: cedhstats.org, cedhtop16.com
 
 **Data Sources:**
 - **cedhstats.org** — free, tracks competitive EDH from TopDeck.gg; provides
@@ -281,7 +296,10 @@ seat breakdown, draw dynamics, and card context into a unified report.
 
 #### 5.2.7 LearnCEDH
 
-Fetches deck summary from LearnCEDH (learncedh.com), the cEDH community deck statistics platform.
+- **Source:** GitHub `ranked-decks.json` + LearnCEDH website (learncedh.com)
+- Fetches deck summary from LearnCEDH (learncedh.com), the cEDH community deck statistics platform
+- Returns: conversion rate, meta share, 95% range, text explanations
+- Source label: learncedh.com, GitHub (raw.githubusercontent.com/evanpierceunm/learncedh)
 
 **Expected Output:**
 1. **Conversion rate** — percentage of games in which this deck wins when played
@@ -398,29 +416,29 @@ After all adapters run, the program combines the results into a unified report.
 The report has the following top-level sections:
 
 1. **Header**
-   - Report title
-   - Generated timestamp
-   - Source (decklink URL or file path)
+  - Report title
+  - Generated timestamp
+  - Source (decklink URL or file path)
 
 2. **Deck Summary**
-   - Total card count
-   - Commander count
-   - Deck name (if available)
+  - Total card count
+  - Commander count
+  - Deck name (if available)
 
 3. **Adapter Summary**
-   - For each adapter: status, key data
-   - Status: AVAILABLE / PARTIAL / UNSUPPORTED
+  - For each adapter: status, key data, and source
+  - Status: AVAILABLE / PARTIAL / UNSUPPORTED
 
 4. **Adapter Details**
-   - For each adapter: full output
-   - Structured data for further processing
+  - For each adapter: full output with source attribution
+  - Structured data for further processing
 
 5. **Caveats**
-   - List of caveats from all adapters
-   - Example: "Commander ban list not cached; banned-card check is PARTIAL"
+  - List of caveats from all adapters
+  - Example: "Commander ban list not cached; banned-card check is PARTIAL"
 
 6. **Decklist**
-   - The full decklist (for verification)
+  - The full decklist (for verification)
 
 ### 6.2 Output Format
 
@@ -517,11 +535,11 @@ All test results are saved to `test_results/` (relative to the repo).
 
 For each URL tested, record a separate verdict:
 
-| Test | Input | Expected Result | Actual Result |
-|---|---|---|---|
-| Decklink JSON | `https://decklink.com/deck/abc123` | Decklist array | Decklist array |
-| Moxfield (Cloudflare) | `https://www.moxfield.com/decks/abc` | PARTIAL | PARTIAL |
-| Local file | `test_deck.txt` | Decklist array | Decklist array |
+| Test | Input | Source | Expected Result | Actual Result |
+|---|---|---|---|---|
+| Decklink JSON | `https://decklink.com/deck/abc123` | decklink.com | Decklist array | Decklist array |
+| Moxfield | `https://www.moxfield.com/decks/abc` | moxfield.com | PARTIAL | PARTIAL |
+| Local file | `test_deck.txt` | local file | Decklist array | Decklist array |
 
 ### 8.3 Test Report Requirements
 
@@ -529,8 +547,8 @@ Every test report must contain:
 - Per-card records with fields: name, source, status, mana_cost, cmc, color_identity, type_line
 - Adapter summary stats (e.g., # cards in local cache, # cards missing)
 - Deck summary: card count, decklist array, status
-
-A test report that only shows `[AVAILABLE] scryfall` with no card records is incomplete.
+- Source attribution: for each adapter result, record the source (e.g., scryfall.com, tagger.scryfall.com, cedhstats.org, cedhtop16.com, learncedh.com, GitHub)
+- A test report that only shows `[AVAILABLE] scryfall` with no card records or source attribution is incomplete.
 
 ---
 

@@ -229,26 +229,27 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 - Input: card tags from the tagger section (Section 5.2.3)
 
 **Calculations:**
-1. **Tag draw probability**: For each tag, calculate the probability of
-   drawing at least one card with that tag in the opening hand
-2. **Opening hand distribution**: Probability distribution of card counts
-   per tag in the opening hand
-3. **Combo tag chances**: Probability of drawing specific tag combinations
-   in the opening hand
-4. **Average lands in opener**: Expected number of lands in the opening
-   hand, based on land count and opening hand size (7 cards by default)
 
-**Input validation:**
-- Uses only the mainboard cards (excludes commander(s) and partners/companions)
-- Relies on tags from the tagger section (Section 5.2.3) for card classification
+1. **Tag draw probability**: For each tag, calculate the probability of drawing at least one card with that tag in the opening hand.
+2. **Opening hand distribution**: Probability distribution of card counts per tag in the opening hand.
+3. **Combo tag chances**: Probability of drawing specific tag combinations in the opening hand.
+4. **Average lands in opener**: Expected number of lands in the opening hand, based on land count and opening hand size (7 cards by default).
 
-**Output:**
-- tag_draw_probability: P(draw at least 1 card with tag X in 7-card hand)
-- opening_hand_distribution: probability distribution of card counts per tag
-- combo_tag_chances: probability of tag combinations in the opening hand
-- average_lands_opening_hand: expected land count in the opening hand (7 cards)
+**Metric definitions (this section constitutes the contract; required for every metric):**
 
-**Dependency:** Requires the tagger section (5.2.3) to provide card tags.
+| Metric | Population | Sample Size | Excluded Cards | Mathematical Event | Assumptions |
+|---|---|---|---|---|---|
+| Tag draw probability | All mainboard cards in the validated deck | 7 cards drawn without replacement (default opening hand) | Commander(s) and partners/companions are excluded | P(draw at least 1 card with tag X in the 7-card hand) = 1 - P(draw 0 cards with tag X) | Cards are drawn uniformly at random; each card has equal probability of selection; tags are fixed properties of each card |
+| Opening hand distribution | All mainboard cards in the validated deck | 7 cards drawn without replacement (default opening hand) | Commander(s) and partners/companions are excluded | P(n cards with tag X in hand) = hypergeometric probability | Same as above; tag categories are defined by the tagger section |
+| Combo tag chances | All mainboard cards in the validated deck | 7 cards drawn without replacement (default opening hand) | Commander(s) and partners/companions are excluded | P(have at least one card from each of N tag groups) = drawing from the intersection of tag groups | This is a tag-draw probability, NOT a playable-combo completion rate. Cards may have overlapping tags (see below). Category probabilities cannot be treated as independent when tags overlap |
+| Average lands in opener | All land cards in the validated deck | 7 cards drawn without replacement (default opening hand) | Commander(s) and partners/companions are excluded | E[lands in hand] = 7 x (land_count / mainboard_count) | Cards are drawn uniformly at random; expected value is linear regardless of independence |
+
+**Important interpretations:**
+
+- **Tag-based estimates, not combo completion rates or deck performance.** All metrics in this section are tag-draw probabilities computed from tagged card lists. They do NOT measure whether a playable combo exists, whether a card combination can be executed, or overall deck strength. A "combo tag chance" means only that at least one card with each of the listed tags is present in the opening hand-not that those cards can be played together.
+- **Overlapping tags.** Many cards carry multiple tags (e.g., a card may be both "artifact" and "enchantment"). Tag-draw probabilities must not be treated as independent events, because a card drawing a card with tag A may also satisfy tag B. The hypergeometric calculation for each individual tag assumes no overlap; when tags overlap, the joint probability of drawing at least one card from each group in a set is strictly less than the product of the individual probabilities. Do not multiply individual tag probabilities to estimate combined chances.
+- **Sample size.** The default opening hand size is 7 cards, but adapters may expose this as a configurable parameter. When changed, sample size must be updated accordingly.
+- **Excluded cards.** Commander(s) and partners/companions are always excluded from the Hypercalculator population, even if they carry tags. This ensures probability calculations reflect only the playable mainboard.
 
 #### 5.2.6 Meta Compare
 
@@ -460,7 +461,8 @@ adapter order, followed by the Caveats section:
 3. **Tagger** — card_tags, inherited_card_tags
 4. **Commander Spellbook** — combos found (cards, steps, resolution order)
 5. **Hypercalculator** — tag draw probabilities, opening hand distribution,
-   combo tag chances, average lands in opener
+   combo tag chances, average lands in opener (with tag-based estimate
+   labeling and metric definitions per Section 5.2.5)
 6. **Meta Compare** — aggregate meta context, seat breakdown, 95% range
 7. **LearnCEDH** — conversion rate, meta share, 95% range, text
    explanations (gameplan, strengths, weaknesses, combos, win conditions)

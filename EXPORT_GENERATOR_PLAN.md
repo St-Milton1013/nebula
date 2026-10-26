@@ -117,11 +117,13 @@ After ingesting the decklist, the program validates the Commander format:
 
 ## 4. Canonicalization
 
-After validation, the program canonicalizes each card using the Scryfall adapter:
+After validation, the program canonicalizes each card using the Scryfall API.
 
-1. For each card name in the decklist, look up card data in the local cache
-2. If not in cache, query the Scryfall API
-3. **Primary reference**: Use the Scryfall `oracle_id` as the internal card identifier for all downstream adapters
+1. For each card name in the decklist, query the Scryfall API for card data
+2. Discards the concept of a local cache — card data is fetched on demand
+   from Scryfall (no full-deck local storage)
+3. **Primary reference**: Use the Scryfall `oracle_id` as the internal
+   card identifier for all downstream adapters
 4. Extract the following fields:
    - oracle_id (primary key)
    - name

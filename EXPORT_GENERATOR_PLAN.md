@@ -221,8 +221,45 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 **Dependency:** Requires the tagger section (5.2.3) to provide card tags.
 
 #### 5.2.6 Meta Compare
-- Fetches CEDHStats data
-- Returns: aggregate stats, seat breakdown, draw dynamics
+- Fetches CEDHStats data (cedhstats.org) and/or EDHTop16 data (cedhtop16.com)
+- Returns: aggregate stats, seat breakdown, draw dynamics, meta share, board
+  (power level), decklist context
+
+**Data Sources:**
+- **cedhstats.org** — free, tracks competitive EDH from TopDeck.gg; provides
+  player experience bands, PPG, win rates, deck trends
+- **cedhtop16.com** — free, public EDH Top 16 data; provides tournament
+  standings, player results, color identity, commander entries
+
+**Statistics Available:**
+1. **Aggregate Stats**
+   - Top 16 standings (win rate, draws, losses, average standing)
+   - Meta share (deck popularity as % of entries)
+   - Board (power level) estimation for the commander
+
+2. **Seat Breakdown**
+   - Player performance by seat
+   - Win rate by seat position
+   - Representation in top cut vs swiss
+
+3. **Draw Dynamics**
+   - Points per game (PPG) by pilot experience band (floor, veterans, ceiling)
+   - 90% confidence interval on PPG estimates
+   - Meta trends over time (30d, 90d, 180d windows)
+
+4. **Deck Context**
+   - Top played cards for this commander (inclusion rate, field inclusion, lift)
+   - Card PPG delta (performance when card present vs absent)
+   - 90% Bayesian uncertainty range
+
+**Data Source Details:**
+- Dataset window: 6 months of decklists from eligible 16+ player events
+- Commander cards excluded from card stats
+- Gates: only decks with 0.2%+ meta share over their period are eligible
+- Rate limits: 120 requests/minute (EDHTop16 API)
+
+**Output:** Structured data for each adapter, combining aggregate stats,
+seat breakdown, draw dynamics, and card context into a unified report.
 
 #### 5.2.7 LearnCEDH
 - Fetches deck summary from LearnCEDH

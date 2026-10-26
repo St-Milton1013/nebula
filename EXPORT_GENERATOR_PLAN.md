@@ -127,12 +127,25 @@ After ingesting the decklist, the program validates the Commander format:
 
 After validation, the program canonicalizes each card using the Scryfall API.
 
-1. For each card name in the decklist, query the Scryfall API for card data
-2. Discards the concept of a local cache — card data is fetched on demand
-   from Scryfall (no full-deck local storage)
-3. **Primary reference**: Use the Scryfall `oracle_id` as the internal
-   card identifier for all downstream adapters
-4. Extract the following fields:
+1. For each card name in the decklist, query the Scryfall API for card data.
+   - Collects the card's face data (including `card_faces` when the card has
+     multiple faces) via the Scryfall API.
+   - On cards lacking a root-level `oracle_id` (e.g., reversible cards whose
+     face-level records carry their own Oracle IDs), the face-level record is
+     used as the canonical identity. The adapter handles this exceptional
+     layout explicitly rather than assuming every Scryfall card object
+     always has a root-level identifier.
+
+2. **Deck identity**: `oracle_id` plus quantity and commander designation.
+   - Each unique card is identified by its `oracle_id`; quantity and
+     commander designation are tracked separately as deck-level metadata.
+
+3. **Canonical records**: one canonical record per Oracle ID.
+   - All face data (complete `card_faces` when present) is retained in the
+     canonical record.
+
+4. **Reference data**: retain the Scryfall fields needed by downstream
+   adapters:
    - oracle_id (primary key)
    - name
    - mana_cost
@@ -142,8 +155,15 @@ After validation, the program canonicalizes each card using the Scryfall API.
    - keywords
    - oracle_text_preview
    - status
+   - card_faces (when present, for face-level data)
 
-Output: A canonicalized card list with full card facts for each card, keyed by oracle_id. This output is saved and referenced by all downstream adapters.
+5. **Reproducibility**: preserve the captured canonical records and their
+   version or content hash. Later runs can reuse the same evidence without
+   making redundant requests — the captured snapshot (record + hash) is the
+   basis for reproducibility, not printing-specific identifiers.
+
+Output: A canonicalized card list with full card facts for each card, keyed by
+oracle_id. This output is saved and referenced by all downstream adapters.
 
 ---
 

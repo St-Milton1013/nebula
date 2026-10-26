@@ -269,12 +269,13 @@ Fetches deck summary from LearnCEDH (learncedh.com), the cEDH community deck sta
 1. **Conversion rate** — percentage of games in which this deck wins when played
 2. **Meta share** — percentage of all decks on the platform that use this deck
 3. **95% range** — the statistical 95% confidence interval for the true win rate
+4. **Text explanations** — deck narrative: gameplan, strengths, weaknesses, core combos, and win conditions (available on the deck page, e.g., `learncedh.com/decklists/<deck_name>`)
 
 ---
 
 ### Data Acquisition
 
-**Primary Data Source:**
+**Primary Data Source (numeric data):**
 LearnCEDH loads deck data from a GitHub-hosted JSON file:
 ```
 https://raw.githubusercontent.com/evanpierceunm/learncedh/main/ranked-decks.json
@@ -284,8 +285,18 @@ This JSON contains 953 ranked decks with the following structure per deck:
 - **conversionRate**: Win rate as a decimal (e.g., 0.28169014084507044)
 - **metaShare**: Meta share as a decimal (e.g., 0.0033971291866028708)
 
-**JavaScript Rendering:**
-The LearnCEDH website itself is a Squarespace-based page. The deck summary display uses:
+**Website Rendering (text explanations):**
+The LearnCEDH website is a Squarespace-based page. Deck detail pages (e.g.,
+`learncedh.com/decklists/arcum-dagsson`) contain:
+- Deck summary section (conversion rate, meta share)
+- **Core Gameplan** — step-by-step strategy description
+- **Strengths and Weaknesses** — detailed analysis of the deck's approach
+- **Core Combos** — multi-card combo breakdowns with step-by-step resolution
+- **Win Conditions** — how the deck wins the game
+- **Tips for Playing** — strategic advice for mulligan, protection, fetch selection
+
+**Element IDs (deck summary):**
+The deck summary display uses:
 - Element IDs: `#deck-conversion-rate`, `#deck-metashare`
 - The page loads `ranked-decks.json` via JavaScript
 - GraphQL API calls to `https://edhtop16.com/api/graphql` for live EDH data
@@ -293,11 +304,15 @@ The LearnCEDH website itself is a Squarespace-based page. The deck summary displ
 **How to Fetch the Data (web client):**
 1. Fetch `ranked-decks.json` from GitHub raw URL
 2. Parse JSON to extract deck name, conversionRate, and metaShare
-3. For the 95% range, no sample size is available in LearnCEDH data — the site shows conversion rate and meta share only
+3. For text explanations, fetch the deck detail page:
+   - `https://learncedh.com/decklists/<deck_name_slug>` (e.g.,
+     `https://learncedh.com/decklists/arcum-dagsson`)
+   - Extract text from sections: Core Gameplan, Strengths and Weaknesses,
+     Core Combos, Win Conditions, Tips for Playing
 
 **How to Fetch the Data (API):**
 - LearnCEDH does not expose a direct REST API
-- The site uses GraphQL to query `https://edhtop16.com/api/graphql` for live EDH statistics
+- The site uses GraphQL to query `https://edhtop16.com/api/graphql` for live EDH data
 - For the 95% range, you would need to query EDHTop16 directly for the commander's match data:
   - `GET https://cedhtop16.com/api/commanders?search=<commander_name>`
   - Retrieve the `games`, `wins`, `draws`, `losses` fields
@@ -317,6 +332,14 @@ The LearnCEDH website itself is a Squarespace-based page. The deck summary displ
   - **Meta share:** 0.34% (0.0033971291866028708)
 - The site displays these values in the deck summary section using element IDs `#deck-conversion-rate` and `#deck-metashare`
 
+**Deck Page Text Excerpts:**
+The deck detail page contains rich text explanations including:
+- **Core Gameplan:** Develop artifact mana and creatures you can sacrifice, then get Arcum ready to activate. His first search should address the table: a hate piece against an imminent win, card draw for a longer game, or a combo piece when you can finish.
+- **Strengths:** Repeatable Tutor (any noncreature artifact every untap with fodder), Big Artifacts for Free (Portal to Phyrexia at the price of an Ornithopter), Mana for Interaction (no mana cost for the fetch ability).
+- **Weaknesses:** Commander Dependent (needs fodder and timing), Artifact Hate (Collector Ouphe, Null Rod, Kataki tax artifacts), Little Card Draw (mostly mana, fodder, and fetch targets).
+- **Core Combos:** Filigree Sages + Chromatic Orrery (infinite mana loop), Mind Over Matter + The One Ring (card draw), Staff of Domination + Metalworker (infinite mana loop), Staff of Domination + Clock of Omens + Sculpting Steel + Grim Monolith/Mana Vault (combo with multiple infinite loops).
+- **Win Conditions:** Walking Ballista (finishing ability), Portal to Phyrexia (slow win via reanimation), Creature Lands (Inkmoth Nexus, Blinkmoth Nexus, Mishra's Factory).
+
 **95% Range:**
 - LearnCEDH does NOT provide the 95% confidence range in its data
 - The site only exposes conversion rate and meta share
@@ -334,12 +357,13 @@ The LearnCEDH website itself is a Squarespace-based page. The deck summary displ
 3. **Conversion rate:** Displayed as percentage; stored as decimal in JSON
 4. **Meta share:** Displayed as percentage; stored as decimal in JSON
 5. **95% range:** NOT available from LearnCEDH directly; requires EDHTop16 API for sample size
-6. **Deck filtering:** The JSON contains 953 decks; filter by deck name to find specific decks
-7. **Fallback:** If GitHub JSON is unavailable, use the GraphQL API or paste decklist directly
+6. **Text explanations:** Available on deck detail pages (e.g., `learncedh.com/decklists/arcum-dagsson`) — extract via HTML scraping, not from the GitHub JSON
+7. **Deck filtering:** The JSON contains 953 decks; filter by deck name to find specific decks
+8. **Fallback:** If GitHub JSON is unavailable, use the GraphQL API or paste decklist directly
 
 ---
 
-**Status:** AVAILABLE (conversion rate and meta share); 95% range requires EDHTop16 API (PARTIAL)
+**Status:** AVAILABLE (conversion rate, meta share, text explanations); 95% range requires EDHTop16 API (PARTIAL)
 
 ### 5.3 Continuity
 

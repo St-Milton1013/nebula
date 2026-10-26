@@ -146,13 +146,13 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 
 | Order | Adapter | Input | Output |
 |---|---|---|---|
-| 1 | `deck_validator` | Decklist | Format validation results |
-| 2 | `scryfall` | Decklist + cache | Card info for each card |
-| 3 | `tagger` | Card names | Tag data for each card |
-| 4 | `commander_spellbook` | Cards | Combo data |
-| 5 | `hypercalculator` | Cards + tags | Probability data |
-| 6 | `meta_compare` | Commander | Meta context |
-| 7 | `learncedh` | Decklist | Deck summary |
+1. **deck_validator** | Decklink (flat card array) | Format validation results (status, card count, commander count, duplicates, color identity, banned cards) |
+2. **scryfall** | Validated decklist + cache | Card info (oracle_id, name, mana_cost, cmc, color_identity, type_line, edhrec_rank, keywords, oracle_text_preview, status) for each card |
+3. **tagger** | Validated card names | Tag data for each card (card_tags, inherited_card_tags) |
+4. **commander_spellbook** | Validated cards (by oracle_id) | Combo data (cards, steps, resolution order) |
+5. **hypercalculator** | Validated cards + tags | Probability data (tag_draw_probability, opening_hand_distribution, combo_tag_chances) |
+6. **meta_compare** | Commanders + validated layout | Meta context (aggregate stats, seat breakdown, draw dynamics) |
+7. **learncedh** | Validated decklist | Deck summary (conversion rate, meta share, 95% range) |
 
 ### 5.2 Adapter Details
 

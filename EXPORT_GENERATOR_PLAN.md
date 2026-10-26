@@ -367,11 +367,35 @@ The deck detail page contains rich text explanations including:
 
 ### 5.3 Continuity
 
-If an adapter is unable to run:
-- Mark its status as PARTIAL
-- Include a caveat explaining why
-- Continue to the next adapter
-- Do NOT return early
+Adapters that cannot run normally are handled as follows. There is a
+distinction between two failure modes, and each is logged differently:
+
+**FAIL (adapter failed):**
+- Status: FAIL
+- A hard failure — the adapter raised an error, returned a falsy result where
+  a result was expected, or otherwise failed in a way that is treated as a
+  definite failure rather than an incomplete run.
+- Logged as FAIL, not PARTIAL.
+- The error is captured in the adapter's output and included in the report's
+  Caveats section.
+- Continue to the next adapter. Do NOT return early.
+
+**PARTIAL (adapter unable to run):**
+- Status: PARTIAL
+- The adapter could not complete, but the failure is not a hard "no result".
+  Examples: missing external API key, service not responding, rate-limited and
+  not recoverable within the run window, or the adapter was expressly skipped.
+- Include a caveat explaining why the adapter is PARTIAL.
+- Continue to the next adapter. Do NOT return early.
+
+The report's Caveats section collects every PARTIAL / FAIL note from every
+adapter so the user sees, at a glance, which adapters did not fully complete
+and why.
+
+The linear pipeline (Section 1) is not branched. An adapter that fails or is
+PARTIAL does not halt the pipeline; it only marks its own status and moves on.
+Exactly one adapter may be in FAIL at a time per deck run; all others that
+could not complete are PARTIAL with caveats.
 
 ---
 

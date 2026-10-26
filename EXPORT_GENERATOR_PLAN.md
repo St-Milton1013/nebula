@@ -192,10 +192,33 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 - Finds combos involving the cards
 - Returns: combo data (cards, steps, resolution order)
 
-#### 5.2.5 Hypercalculator
-- Computes tag-based probabilities
-- Uses hypergeometric distribution
-- Returns: tag_draw_probability, opening_hand_distribution, combo_tag_chances
+#### 5.2.2 Hypercalculator
+- Computes tag-based probabilities using the hypergeometric distribution
+- Default hand size: 7 cards
+- Input: validated mainboard cards only (commander(s) and companions excluded)
+- Input: card tags from the tagger section (Section 5.2.3)
+
+**Calculations:**
+1. **Tag draw probability**: For each tag, calculate the probability of
+   drawing at least one card with that tag in the opening hand
+2. **Opening hand distribution**: Probability distribution of card counts
+   per tag in the opening hand
+3. **Combo tag chances**: Probability of drawing specific tag combinations
+   in the opening hand
+4. **Average lands in opener**: Expected number of lands in the opening
+   hand, based on land count and opening hand size (7 cards by default)
+
+**Input validation:**
+- Uses only the mainboard cards (excludes commander(s) and partners/companions)
+- Relies on tags from the tagger section (Section 5.2.3) for card classification
+
+**Output:**
+- tag_draw_probability: P(draw at least 1 card with tag X in 7-card hand)
+- opening_hand_distribution: probability distribution of card counts per tag
+- combo_tag_chances: probability of tag combinations in the opening hand
+- average_lands_opening_hand: expected land count in the opening hand (7 cards)
+
+**Dependency:** Requires the tagger section (5.2.3) to provide card tags.
 
 #### 5.2.6 Meta Compare
 - Fetches CEDHStats data

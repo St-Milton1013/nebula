@@ -72,12 +72,13 @@ Do NOT build a remote loader class. The URL fetching logic stays local. The prog
 
 ### 2.5 Known Limitations
 
-- Moxfield URLs: direct HTTP fetch returns Cloudflare (403); MCP
-  `get_moxfield_deck` (MTG MCP) bypasses Cloudflare and is the primary
-  ingestion path — use it for any Moxfield URL (fallback: paste decklist)
-- Archidekt URLs: direct HTTP fetch returns Cloudflare (403); MCP
-  `get_archidekt_deck` (MTG MCP) bypasses Cloudflare and is the primary
-  ingestion path — use it for any Archidekt URL (fallback: paste decklist)
+- Moxfield URLs: direct HTTP fetch returns Cloudflare (403). Use MCP
+  `get_moxfield_deck` (MTG MCP) as the primary ingestion path — call it
+  with the deck URL. Fallback only if MCP returns empty/fail: paste the
+  decklist directly.
+- Archidekt URLs: direct HTTP fetch returns Cloudflare (403). Use MCP
+  `get_archidekt_deck` (MTG MCP) as the primary ingestion path — call it
+  with the deck URL. Fallback only if MCP returns empty/fail: paste decklist
 
 ---
 

@@ -185,7 +185,7 @@ The program runs all adapters in sequence. Each adapter receives the validated, 
 - Filters out artwork tags (visual only)
 - Returns: card_tags, inherited_card_tags
 
-> Reference: [mtg_ultimate_tag](https://github.com/benjamin-fouilleul/mtg_ultimate_tag) — Elixir/Phoenix web app that uses `tagger.scryfall.com` to scrape tags dynamically for decklists. Confirms tagger.scryfall.com as the correct source for card tags.
+> Reference: [mtg_ultimate_tag](https://github.com/benjamin-fouilleul/mtg_ultimate_tag) — Elixir + Phoenix web app that scrapes tags from `tagger.scryfall.com` for decklists. Confirms `tagger.scryfall.com` as the correct tag source.
 
 #### 5.2.4 Commander Spellbook
 - Queries the REST API at backend.commanderspellbook.com

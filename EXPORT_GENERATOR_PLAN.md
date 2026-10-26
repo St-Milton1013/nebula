@@ -410,10 +410,46 @@ Two output formats are supported:
 
 | Format | Output | Use case |
 |---|---|---|
-| Text | Human-readable summary | Console display |
+| Text | Human-readable summary | Console display; also written to the Obsidian vault |
 | JSON | Structured data | Machine processing, further analysis |
 
+**Text file contents** — the text report captures every adapter export, in
+adapter order, followed by the Caveats section:
+
+1. **Deck Validator** — format status, card count, commander count,
+   duplicates, color identity, banned cards
+2. **Scryfall** — card facts per card (oracle_id, name, mana_cost, cmc,
+   color_identity, type_line, edhrec_rank, keywords, oracle_text_preview,
+   status)
+3. **Tagger** — card_tags, inherited_card_tags
+4. **Commander Spellbook** — combos found (cards, steps, resolution order)
+5. **Hypercalculator** — tag draw probabilities, opening hand distribution,
+   combo tag chances, average lands in opener
+6. **Meta Compare** — aggregate meta context, seat breakdown, 95% range
+7. **LearnCEDH** — conversion rate, meta share, 95% range, text
+   explanations (gameplan, strengths, weaknesses, combos, win conditions)
+8. **Caveats** — every PARTIAL / FAIL note from every adapter
+
 ### 6.3 File Output
+
+**Text output:**
+1. Write to the Obsidian vault at
+   `C:\Users\Main\Documents\cedh data\audit package export`
+2. Content: the full text report (all adapter sections plus Caveats), in
+   human-readable format
+
+**Naming convention:**
+
+Text files are named: `YYYY-MM-DD_Commanders_HHMMSS.txt`
+
+- **Date** — generation date, `YYYY-MM-DD`
+- **Commanders** — the deck's commander name(s), taken verbatim from the
+  validated deck, space-joined (e.g. `Arcum Dagsson`, `Korvold Warped
+  Eclipse`). Illegal file-name characters are replaced with `-`.
+- **Time** — local time, `HHMMSS`
+
+Example: `2026-10-26_Arcum Dagsson_281702.txt`
+Example: `2026-10-26_Korvold Warped Eclipse_281702.txt`
 
 When outputting in JSON format:
 1. Write to the specified output file

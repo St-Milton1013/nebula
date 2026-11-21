@@ -19,6 +19,7 @@ from .cardtruth import CardTruth
 from .decklink import load_link
 from .freeze import write_snapshot
 from .importer import Deck, load_deck
+from .metrics import composition
 from .roles import RoleClassifier
 from .tagger import Tags
 
@@ -45,6 +46,8 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
                           extra={"card_truth": truth.version})
     result = legality.check(deck, truth)
 
+    comp = composition(deck, truth)
+
     roles = None
     if tags_path is not None:
         if not tags_path.exists():
@@ -70,6 +73,7 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
             "source_updated_at": truth.meta.get("source_updated_at"),
         },
         "legality": result,
+        "composition": comp,
     }
     if roles is not None:
         payload["roles"] = {k: v for k, v in roles.items() if k != "per_card"}
@@ -94,6 +98,18 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
             print(f"          - {c}")
         if len(f["cards"]) > 8:
             print(f"          ... +{len(f['cards']) - 8} more")
+    print()
+    print(f"deck shape  {comp['total']} cards  |  {comp['lands']} lands "
+          f"({comp['basic_lands']} basic, {comp['nonbasic_lands']} nonbasic)  |  "
+          f"{comp['nonlands']} nonland")
+    if comp["average_mana_value"] is not None:
+        print(f"  mana value  avg {comp['average_mana_value']}  median {comp['median_mana_value']}  "
+              f"total {comp['mana_value_total']}")
+    curve_bits = "  ".join(f"{k}:{v}" for k, v in comp["curve"].items())
+    print(f"  curve       {curve_bits}")
+    type_bits = "  ".join(f"{k} {v}" for k, v in list(comp["types"].items())[:6])
+    print(f"  types       {type_bits}")
+
     if roles is not None:
         cov = roles["coverage"]
         print()
@@ -102,6 +118,10 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
         for role, count in roles["counts"].items():
             bar = "#" * min(count, 40)
             print(f"  {role:<11} {count:>3}  {bar}")
+        print(f"  overlap     {len(roles['multi_role'])} card(s) in 2+ roles, "
+              f"{roles['distinct_in_any_role']} distinct cards, {roles['role_slots']} role slots")
+        for card in roles["multi_role"][:6]:
+            print(f"    {card['name'][:34]:<34} {'+'.join(card['roles'])}")
         if roles["untagged"]:
             print("  untagged:", ", ".join(roles["untagged"][:8]),
                   "..." if len(roles["untagged"]) > 8 else "")

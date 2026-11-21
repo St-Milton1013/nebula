@@ -86,6 +86,14 @@ class RoleClassifier:
             for role in card["roles"]:
                 counts[role] += card["qty"]
 
+        # D7: a card may hold several roles. Counts are per role and do not sum
+        # to the deck; the multi-role cards are listed so the overlap is visible.
+        multi = [
+            {"name": c["name"], "qty": c["qty"], "roles": c["roles"]}
+            for c in per_card if len(c["roles"]) > 1
+        ]
+        distinct_in_any_role = sum(1 for c in per_card if c["roles"])
+
         untagged = [f"{c['name']} x{c['qty']}" for c in per_card if c["state"] == "UNTAGGED"]
         unresolved = [c["name"] for c in per_card if c["state"] == "UNRESOLVED"]
         lands = [c["name"] for c in per_card if c["state"] == "LAND"]
@@ -107,6 +115,9 @@ class RoleClassifier:
             },
             "untagged": untagged,
             "unresolved": unresolved,
+            "multi_role": multi,
+            "distinct_in_any_role": distinct_in_any_role,
+            "role_slots": sum(counts.values()),
             "per_card": per_card,
             "status": "AVAILABLE" if not unresolved and not untagged and not self.missing_anchors else "PARTIAL",
         }

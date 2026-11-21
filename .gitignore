@@ -1,0 +1,5 @@
+# frozen data stores are rebuilt, never committed (NEBULA-CONTRACT-P0.md §2)
+data/
+__pycache__/
+*.pyc
+.venv/

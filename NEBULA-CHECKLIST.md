@@ -1,6 +1,6 @@
-# NEBULA — Open (nothing decided, nothing sealed)
+# NEBULA — P0 contract locked (2026-11-21)
 
-**Status:** OPEN — no decisions made, nothing sealed so far.
+**Status:** P0 CONTRACT LOCKED 2026-11-21 — five decisions sealed in `NEBULA-CONTRACT-P0.md`. Pipeline stages remain open and are chosen one at a time.
 **Workspace:** `/c/Users/Main/Desktop/project frontgate/Projects/nebula/`
 **Source of truth (codie):** `C:\Users\Main\Desktop\project frontgate\Projects\Codie\`
 **Codie GitHub:** https://github.com/St-Milton1013/Codie
@@ -8,7 +8,17 @@
 
 ---
 
-## Direction you've given (open — not sealed)
+## Locked (user, 2026-11-21) — see `NEBULA-CONTRACT-P0.md`
+
+- **D1** Nebula is an independent iteration; it inherits Codie's conclusions, never its code.
+- **D2** Codie is the staging ground — parts are proven there, then promoted.
+- **D3** The simulator answers one question only: P(target card reaches zone Z by turn N).
+- **D4** Nebula builds the pipeline, P0 → P3 in order.
+- **D5** Single-deck review; Jin's two-pass critic is the review layer.
+
+---
+
+## Direction you've given (locked above, recorded here for reading)
 
 1. **Single-deck** reviews, not multi-deck.
 2. **Two-pass critic (Jin):** a bounded second pass over an evidence packet — it reads the evidence, returns structured adversarial flags, calls no tools, and never rewrites. Keep as a review component.

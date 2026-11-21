@@ -1,0 +1,79 @@
+{
+  "tests": [
+    {
+      "name": "1. Package Syntax",
+      "status": "PASS",
+      "details": "nebula_package_single.py compiles successfully"
+    },
+    {
+      "name": "2. Adapter: scryfall",
+      "status": "PASS",
+      "details": "Adapter callable"
+    },
+    {
+      "name": "2. Adapter: deck_validator",
+      "status": "PASS",
+      "details": "Adapter callable"
+    },
+    {
+      "name": "2. Adapter: learncedh",
+      "status": "PASS",
+      "details": "Adapter callable"
+    },
+    {
+      "name": "2. Adapter: commander_spellbook",
+      "status": "PASS",
+      "details": "Adapter callable"
+    },
+    {
+      "name": "2. Adapter: hypercalculator",
+      "status": "PASS",
+      "details": "Adapter callable"
+    },
+    {
+      "name": "2. Adapter: meta_compare",
+      "status": "PASS",
+      "details": "Adapter callable"
+    },
+    {
+      "name": "3. Decklist Export",
+      "status": "PASS",
+      "details": "4 cards loaded"
+    },
+    {
+      "name": "4. Link Loading (file://)",
+      "status": "PASS",
+      "details": "4 cards"
+    },
+    {
+      "name": "5. build_report (local)",
+      "status": "PASS",
+      "details": "AVAILABLE, 4 cards"
+    },
+    {
+      "name": "6. Moxfield URL (aeHI23)",
+      "status": "PASS",
+      "details": "Cloudflare block detected, handled gracefully"
+    },
+    {
+      "name": "7. Moxfield URL (V4ZllY7oHUGVc9AZPM2DEA)",
+      "status": "PASS",
+      "details": "Cloudflare block detected, handled gracefully"
+    },
+    {
+      "name": "8. Moxfield URL (Xwf8D6Qt5EeWZGDPJjwnSg)",
+      "status": "PASS",
+      "details": "Cloudflare block detected, handled gracefully"
+    }
+  ],
+  "summary": {
+    "package_syntax": "PASS",
+    "adapters": "PASS",
+    "decklist_export": "PASS",
+    "link_loading": "PASS",
+    "build_report": "PASS",
+    "moxfield_url": "PASS (Cloudflare block detected)",
+    "moxfield_url_2": "PASS (Cloudflare block detected)",
+    "moxfield_url_3": "PASS (Cloudflare block detected)"
+  }
+}

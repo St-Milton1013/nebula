@@ -20,6 +20,8 @@ TAG_STORE = {
 
 BY_ORACLE = {
     "oid-sol": ["ramp"],
+    "oid-tomb": ["ramp"],
+    "oid-fetch": ["tutor"],
     "oid-birds": ["ramp-creature"],
     "oid-draw": ["card advantage"],
     "oid-tutor": ["tutor"],
@@ -32,6 +34,10 @@ RECORDS = [
     {"name": "Demonic Tutor", "oracle_id": "oid-tutor", "type_line": "Sorcery"},
     {"name": "Island", "oracle_id": "oid-island", "type_line": "Basic Land - Island"},
     {"name": "Untagged Rock", "oracle_id": "oid-untagged", "type_line": "Artifact"},
+    {"name": "Ancient Tomb", "oracle_id": "oid-tomb", "type_line": "Land"},
+    {"name": "Bloodstained Mire", "oracle_id": "oid-fetch", "type_line": "Land"},
+    {"name": "Sink into Stupor // Soporific Spring", "oracle_id": "oid-mdfc",
+     "type_line": "Instant // Land"},
 ]
 
 
@@ -64,6 +70,27 @@ class RoleTests(unittest.TestCase):
     def test_land_is_its_own_state(self):
         roles, state = self.classifier.roles_for("Island")
         self.assertEqual((roles, state), ([], "LAND"))
+
+    def test_land_ramp_is_counted(self):
+        roles, state = self.classifier.roles_for("Ancient Tomb")
+        self.assertEqual((roles, state), (["ramp"], "CLASSIFIED"))
+
+    def test_land_tutor_is_withheld_and_disclosed(self):
+        roles, state = self.classifier.roles_for("Bloodstained Mire")
+        self.assertEqual((roles, state), ([], "LAND"))
+        out = self.classifier.classify(parse_decklist("1 Bloodstained Mire\n"))
+        self.assertEqual(out["land_roles_excluded"],
+                         [{"name": "Bloodstained Mire", "qty": 1, "roles": ["tutor"]}])
+
+    def test_ramp_split_separates_lands_from_spells(self):
+        deck = parse_decklist("1 Ancient Tomb\n1 Sol Ring\n1 Birds of Paradise\n")
+        out = self.classifier.classify(deck)
+        self.assertEqual(out["counts"]["ramp"], 3)
+        self.assertEqual(out["ramp_split"], {"land": 1, "spells": 2})
+
+    def test_modal_dfc_front_face_decides_land_status(self):
+        roles, state = self.classifier.roles_for("Sink into Stupor // Soporific Spring")
+        self.assertNotEqual(state, "LAND")
 
     def test_untagged_card_is_reported(self):
         roles, state = self.classifier.roles_for("Untagged Rock")

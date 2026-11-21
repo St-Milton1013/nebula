@@ -29,6 +29,7 @@ This file is that freeze. Code that contradicts it is wrong, not the contract.
 | D5 | Single-deck review; Jin's two-pass critic is the review layer. | Multi-deck is out of scope; `/compare` is not in the pipeline. |
 | D6 | **The role taxonomy is the Scryfall Tagger hierarchy.** Community-built, community-checked; good enough. Roles are Tagger parents, and a card counts for a role when any of its tags inherits that anchor. | No hand-written keyword lists, no per-deck tuning. Lands carry no role and are counted separately. |
 | D7 | **A card may hold several roles.** Roles are coverage, not buckets: a card that counters and removes counts for both. | Counts are per role, never forced to sum to the deck size, and cards in more than one role are listed so the overlap is visible. |
+| D8 | **A land may hold the `ramp` role.** Land ramp is ramp. | Land ramp is counted in `ramp` and reported with its split (spells vs lands); a land's other role hits are withheld and listed, so a fetchland never reads as a tutor. |
 
 ---
 
@@ -205,9 +206,14 @@ Two rules that keep the numbers honest:
 3. **Overlap is disclosed, not suppressed (D7).** Role counts are per role and do not sum
    to the deck size. The report lists every card in more than one role, so a card doing
    double duty is visible rather than averaged away.
+4. **Lands count for `ramp` only (D8).** A land is classified like any other card, then
+   filtered to `LAND_ROLES`. Its other hits are printed as *lands not counted as* —
+   Bloodstained Mire is a land that tutors, not a tutor. The `ramp` figure always prints
+   its split: `27 (25 spells + 2 land)`.
 
 ## 10. Not yet decided
 
 - Report delivery target (file, Obsidian, Discord) — deferred per design step 248.
-- Whether land ramp (Ancient Tomb, land-fetching) belongs in the `ramp` figure or only in
-  the land diagnostic. Default today: excluded, lands reported separately.
+- Whether a card printed as `Instant // Land` (Sink into Stupor) should be scored as a
+  spell for curve purposes when cast as a land. Current rule: front face decides, so it
+  is a nonland.

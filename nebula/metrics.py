@@ -21,17 +21,22 @@ TYPE_ORDER = ("Creature", "Planeswalker", "Instant", "Sorcery", "Artifact",
 
 def primary_type(type_line: str | None) -> str:
     """One word per card: Creature, Instant, Artifact, ... First match wins."""
-    text = str(type_line or "").split(" // ")[0].split("\u2014")[0]
+    text = front_type_line(type_line).split("\u2014")[0]
     for kind in TYPE_ORDER:
         if kind in text:
             return kind
     return (text.strip().split(" ")[0] or "Unknown") if text.strip() else "Unknown"
 
 
-def _is_land(record: dict | None) -> bool:
+def front_type_line(type_line: str | None) -> str:
+    """The front face only: a modal DFC 'Instant // Land' is an Instant."""
+    return str(type_line or "").split(" // ")[0]
+
+
+def is_land(record: dict | None) -> bool:
     if not record:
         return False
-    return "land" in str(record.get("tl") or "").lower()
+    return "land" in front_type_line(record.get("tl")).lower()
 
 
 def composition(deck: Deck, truth: CardTruth) -> dict:
@@ -46,7 +51,7 @@ def composition(deck: Deck, truth: CardTruth) -> dict:
         if record is None:
             unresolved += entry.qty
             continue
-        if _is_land(record):
+        if is_land(record):
             lands += entry.qty
             if entry.name.lower() in BASIC_LANDS:
                 basics += entry.qty

@@ -2,7 +2,7 @@ import unittest
 
 from nebula.cardtruth import CardTruth
 from nebula.importer import parse_decklist
-from nebula.metrics import composition, primary_type
+from nebula.metrics import composition, is_land, primary_type
 
 RECORDS = [
     {"name": "Island", "type_line": "Basic Land - Island", "cmc": 0},
@@ -57,6 +57,19 @@ class CompositionTests(unittest.TestCase):
         comp = composition(self.deck, self.truth)
         total_pct = round(sum(comp["curve_pct"].values()), 1)
         self.assertTrue(99.0 <= total_pct <= 101.0, total_pct)
+
+
+class LandDetectionTests(unittest.TestCase):
+    def test_plain_land(self):
+        self.assertTrue(is_land({"tl": "Land"}))
+        self.assertTrue(is_land({"tl": "Basic Land - Island"}))
+
+    def test_modal_dfc_front_face_wins(self):
+        self.assertFalse(is_land({"tl": "Instant // Land"}))
+        self.assertFalse(is_land({"tl": "Legendary Artifact // Land"}))
+
+    def test_missing_record(self):
+        self.assertFalse(is_land(None))
 
 
 class PrimaryTypeTests(unittest.TestCase):

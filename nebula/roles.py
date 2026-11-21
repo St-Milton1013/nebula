@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from .cardtruth import CardTruth
 from .importer import Deck
+from .metrics import is_land
 from .tagger import Tags
 
 # role -> (anchor tag label, what the role is for)
@@ -27,9 +28,10 @@ ROLE_ANCHORS: dict[str, tuple[str, str]] = {
     "recursion":   ("recursion", "getting cards back from the graveyard"),
 }
 
-# Roles that overlap functionally. Reported so a card is never counted twice
-# without saying so.
-OVERLAPS = [("counter", "removal"), ("wipe", "removal"), ("stax", "protection")]
+# A land may hold these roles (decision 2026-11-21: lands can be ramp).
+# Other role hits on lands are recorded as `land_roles_excluded` so a fetchland
+# reading as a tutor is visible rather than quietly dropped or quietly counted.
+LAND_ROLES = {"ramp"}
 
 
 class RoleClassifier:
@@ -52,33 +54,43 @@ class RoleClassifier:
 
     def roles_for(self, card_name: str) -> tuple[list[str], str]:
         """Return (roles, state): CLASSIFIED / LAND / UNTAGGED / UNRESOLVED."""
+        roles, state, _ = self._classify_card(card_name)
+        return roles, state
+
+    def _classify_card(self, card_name: str) -> tuple[list[str], str, list[str]]:
+        """Roles, state, and role hits withheld by the land rule."""
         record = self.truth.resolve(card_name)
         if record is None:
-            return [], "UNRESOLVED"
-        if "land" in str(record.get("tl") or "").lower():
-            return [], "LAND"
-        oracle_id = record.get("oid")
-        card_tags = self.tags.tags_for(oracle_id)
+            return [], "UNRESOLVED", []
+        card_tags = self.tags.tags_for(record.get("oid"))
+        land = is_land(record)
         if not card_tags:
-            return [], "UNTAGGED"
-        hit = []
-        for role, anchor in self.anchors.items():
-            if any(anchor in self.tags.ancestors(slug) for slug in card_tags):
-                hit.append(role)
-        return hit, "CLASSIFIED" if hit else "UNTAGGED"
+            return [], ("LAND" if land else "UNTAGGED"), []
+
+        hit = [role for role, anchor in self.anchors.items()
+               if any(anchor in self.tags.ancestors(slug) for slug in card_tags)]
+        if not land:
+            return hit, ("CLASSIFIED" if hit else "UNTAGGED"), []
+
+        allowed = [r for r in hit if r in LAND_ROLES]
+        withheld = [r for r in hit if r not in LAND_ROLES]
+        return allowed, ("CLASSIFIED" if allowed else "LAND"), withheld
 
     def classify(self, deck: Deck) -> dict:
         per_card = []
         for entry in deck.entries:
             if entry.zone == "sideboard":
                 continue
-            roles, state = self.roles_for(entry.name)
+            record = self.truth.resolve(entry.name)
+            roles, state, withheld = self._classify_card(entry.name)
             per_card.append({
                 "name": entry.name,
                 "qty": entry.qty,
                 "zone": entry.zone,
+                "land": is_land(record),
                 "roles": roles,
                 "state": state,
+                "land_roles_excluded": withheld,
             })
 
         counts = {role: 0 for role in ROLE_ANCHORS}
@@ -96,17 +108,26 @@ class RoleClassifier:
 
         untagged = [f"{c['name']} x{c['qty']}" for c in per_card if c["state"] == "UNTAGGED"]
         unresolved = [c["name"] for c in per_card if c["state"] == "UNRESOLVED"]
-        lands = [c["name"] for c in per_card if c["state"] == "LAND"]
-        nonland = [c for c in per_card if c["state"] != "LAND"]
+        nonland = [c for c in per_card if not c["land"]]
+        land_cards = [c for c in per_card if c["land"]]
+
+        # lands may only hold LAND_ROLES; show the split so ramp reads honestly
+        land_ramp = sum(c["qty"] for c in land_cards if "ramp" in c["roles"])
+        spell_ramp = sum(c["qty"] for c in nonland if "ramp" in c["roles"])
+        excluded = [
+            {"name": c["name"], "qty": c["qty"], "roles": c["land_roles_excluded"]}
+            for c in land_cards if c["land_roles_excluded"]
+        ]
         classified = sum(1 for c in nonland if c["state"] == "CLASSIFIED")
 
         return {
             "version": {"roles": self.version, "anchors": self.anchors},
             "counts": counts,
+            "ramp_split": {"land": land_ramp, "spells": spell_ramp},
             "coverage": {
                 "cards": len(per_card),
                 "nonland": len(nonland),
-                "lands": len(lands),
+                "lands": len(land_cards),
                 "classified": classified,
                 "untagged": len(untagged),
                 "unresolved": len(unresolved),
@@ -115,6 +136,7 @@ class RoleClassifier:
             },
             "untagged": untagged,
             "unresolved": unresolved,
+            "land_roles_excluded": excluded,
             "multi_role": multi,
             "distinct_in_any_role": distinct_in_any_role,
             "role_slots": sum(counts.values()),

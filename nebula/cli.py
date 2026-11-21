@@ -115,13 +115,21 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
         print()
         print(f"roles     {roles['status']}  ({cov['classified']}/{cov['nonland']} nonland cards classified, "
               f"{cov['untagged']} untagged, {cov['lands']} lands)")
+        split = roles["ramp_split"]
         for role, count in roles["counts"].items():
-            bar = "#" * min(count, 40)
-            print(f"  {role:<11} {count:>3}  {bar}")
+            note = ""
+            if role == "ramp" and count:
+                note = f"  ({split['spells']} spells + {split['land']} land)"
+            print(f"  {role:<11} {count:>3}  {'#' * min(count, 40)}{note}")
         print(f"  overlap     {len(roles['multi_role'])} card(s) in 2+ roles, "
               f"{roles['distinct_in_any_role']} distinct cards, {roles['role_slots']} role slots")
         for card in roles["multi_role"][:6]:
             print(f"    {card['name'][:34]:<34} {'+'.join(card['roles'])}")
+        if roles["land_roles_excluded"]:
+            shown = ", ".join(f"{c['name']} ({'+'.join(c['roles'])})"
+                              for c in roles["land_roles_excluded"][:5])
+            print(f"  lands not counted as: {shown}",
+                  "..." if len(roles["land_roles_excluded"]) > 5 else "")
         if roles["untagged"]:
             print("  untagged:", ", ".join(roles["untagged"][:8]),
                   "..." if len(roles["untagged"]) > 8 else "")

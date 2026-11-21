@@ -24,7 +24,7 @@ This file is that freeze. Code that contradicts it is wrong, not the contract.
 |---|---|---|
 | D1 | **Nebula is an independent iteration**, not a continuation of Codie. It inherits Codie's *conclusions*, never its code. | Nebula imports nothing from `codie.*`. No shared package, no vendored modules. |
 | D2 | **Codie is the staging ground.** Parts are proven there first, then promoted into Nebula. | A component earns its place in Nebula by passing §1.2, not by existing. |
-| D3 | **The simulator answers one question:** probability that a *target card* reaches a *zone* by *turn N*. Not "can we win". | No win-rate field anywhere in Nebula. See §5. |
+| D3 | **The simulator answers one question:** probability that this deck can *cast* a named card by turn N. Not "can we win", not "do we see it". One target per run. | No win-rate field anywhere in Nebula. See §5. |
 | D4 | Nebula builds the **pipeline** (P0 → P3 in that order). | Later stages may not be built before their prerequisites. |
 | D5 | Single-deck review; Jin's two-pass critic is the review layer. | Multi-deck is out of scope; `/compare` is not in the pipeline. |
 
@@ -114,44 +114,30 @@ PARTIAL — that defect is the reason this rule exists.)
 
 ## 5. Simulation contract
 
-**The question:** `P(target card reaches zone Z by turn N)`.
+**The question, and only this one:** `P(this deck can cast card X by turn N)`.
 
-Separate metrics, never merged (design steps 139–140, 144):
+- **Casting, not seeing.** The metric is *cast*: mana was available and the sequence was
+  legal. "In hand" and "seen" are not this metric and are not what a run reports.
+- **One target card per run.** Multi-card questions are out of scope by decision
+  (2026-11-21). Per-card results are reported separately and never combined into a
+  composite rate — no "any of these K cards" number exists anywhere in Nebula.
+- **The simulator is the tool for this** because casting depends on mana and sequencing.
+  A draw-only question ("when do I see X") is not simulated at all; if one is ever
+  needed it is an exact hypergeometric calculation, not a run.
 
-| Metric | Meaning |
-|---|---|
-| `cast_by_turn` | the card was *cast* by turn N (mana was available and sequenced) |
-| `in_hand_by_turn` | the card was *in hand* by turn N |
-| `seen_by_turn` | drawn, tutored, revealed, or otherwise accessed by turn N — definition recorded per run |
+**Recorded per run:** target card id, turn N, game count, mulligan policy, play/draw,
+`registryVersion`, capture date, cast rate, interval, deck fingerprint.
 
-**Recorded per run:** target card id, zone, turn N, game count, mulligan policy, play/draw,
-`registryVersion`, capture date, rate, interval, coverage limits.
+**Unmodelled cards.** A card with no behavioural definition is inert in the model. A cast
+rate for such a target is not a low number, it is a **blank**: reported as
+`UNRESOLVED — no behavioural definition`, never as 0% and never silently omitted.
+Expanding that coverage is a separate workstream (§8), not a pipeline stage.
 
-### 5.1 Two tools, not one
+### 5.1 Never
 
-- **"When do we see cards?"** is a card-draw question with no mana or interaction in it.
-  Compute it exactly: hypergeometric, stdlib only, no browser, no egress, no simulation.
-- **"When can we cast cards?"** depends on mana and sequencing. That is the simulator's
-  job, and the only job it is uniquely qualified for.
-
-### 5.2 Multi-card questions
-
-Per-card rates **must not** be multiplied into `1 − Π(1 − pᵢ)`. Draws come from one
-100-card deck, so the events are negatively correlated and share mana; that formula
-overstates the answer. Permitted forms:
-
-- report the set of per-card rates separately (default), or
-- a union bound `Σ pᵢ` as an explicit upper bound, labelled as such, or
-- an exact hypergeometric for "at least one of these K cards" when the question is
-  purely about access, not casting.
-
-A composite "any target" number is not a substitute for per-card results (step 144).
-
-### 5.3 Never
-
-Win rate. Win probability. "Performs better." Cards not modelled are reported as
-limitations, not treated as blanks (the 2026-11-19 investigation found 45 of 100 cards
-inert on the sampled list).
+Win rate. Win probability. "Performs better." An unmodelled target is reported as
+`UNRESOLVED`, never as a low percentage (the 2026-11-19 investigation found 45 of 100
+cards inert on the sampled list).
 
 ---
 
@@ -183,9 +169,14 @@ of structure is the requirement, not completeness of data (step 243).
 
 ---
 
-## 8. Not yet decided
+## 8. Tracked workstreams (not pipeline stages)
 
-- Code home: fresh package in `St-Milton1013/nebula` vs reviving the `master` prototype.
-- Whether `master` is reference-only or the seed of the build.
+- **Simulator card coverage.** Inert cards in the cEDHData model are a separate problem
+  (2026-11-21). A target with no behaviour definition yields a blank, not a rate; raising
+  coverage is studied on its own and does not gate P0.
+- **Laya's role** given 55/70 answers sit below 0.30 confidence.
+
+## 9. Not yet decided
+
 - Report delivery target (file, Obsidian, Discord) — deferred per design step 248.
-- Laya's role given 55/70 answers sit below 0.30 confidence.
+- Deterministic metric definitions (role taxonomy, denominators) — P0-239, next.

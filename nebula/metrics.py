@@ -34,14 +34,24 @@ def front_type_line(type_line: str | None) -> str:
 
 
 def is_land(record: dict | None) -> bool:
+    """Front face is a land: this card is played as a land drop."""
     if not record:
         return False
     return "land" in front_type_line(record.get("tl")).lower()
 
 
+def has_land_face(record: dict | None) -> bool:
+    """Any face is a land, including the back of a modal DFC."""
+    if not record:
+        return False
+    return any("land" in part.lower()
+               for part in str(record.get("tl") or "").split(" // "))
+
+
 def composition(deck: Deck, truth: CardTruth) -> dict:
     rows = [e for e in deck.entries if e.zone != "sideboard"]
     lands = nonlands = basics = unresolved = 0
+    modal_lands: list[dict] = []
     values: list[float] = []
     curve = Counter()
     types = Counter()
@@ -56,6 +66,11 @@ def composition(deck: Deck, truth: CardTruth) -> dict:
             if entry.name.lower() in BASIC_LANDS:
                 basics += entry.qty
             continue
+        if has_land_face(record):
+            # A modal DFC played as a spell is still a land when you need a land
+            # drop. Counted in both places, and named so the double count is
+            # visible rather than silent (decision 2026-11-21).
+            modal_lands.append({"name": entry.name, "qty": entry.qty})
         nonlands += entry.qty
         cmc = float(record.get("cmc") or 0.0)
         values.extend([cmc] * entry.qty)
@@ -69,6 +84,9 @@ def composition(deck: Deck, truth: CardTruth) -> dict:
         "nonlands": nonlands,
         "basic_lands": basics,
         "nonbasic_lands": lands - basics,
+        "modal_lands": modal_lands,
+        "modal_land_count": sum(m["qty"] for m in modal_lands),
+        "land_sources": lands + sum(m["qty"] for m in modal_lands),
         "unresolved": unresolved,
         "average_mana_value": round(statistics.fmean(values), 2) if values else None,
         "median_mana_value": statistics.median(values) if values else None,

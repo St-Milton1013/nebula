@@ -2,7 +2,7 @@ import unittest
 
 from nebula.cardtruth import CardTruth
 from nebula.importer import parse_decklist
-from nebula.metrics import composition, is_land, primary_type
+from nebula.metrics import composition, has_land_face, is_land, primary_type
 
 RECORDS = [
     {"name": "Island", "type_line": "Basic Land - Island", "cmc": 0},
@@ -53,6 +53,20 @@ class CompositionTests(unittest.TestCase):
         self.assertEqual(comp["types"]["Creature"], 3)  # Oracle, Birds, Birgi front
         self.assertEqual(comp["types"]["Artifact"], 1)  # Sol Ring only (Birgi counted as Creature)
 
+    def test_modal_land_counts_as_spell_and_as_land_source(self):
+        truth = CardTruth.from_records([
+            {"name": "Island", "type_line": "Basic Land - Island", "cmc": 0},
+            {"name": "Sink into Stupor // Soporific Spring",
+             "type_line": "Instant // Land", "cmc": 2},
+        ])
+        deck = parse_decklist("Mainboard\n4 Island\n1 Sink into Stupor // Soporific Spring\n")
+        comp = composition(deck, truth)
+        self.assertEqual(comp["lands"], 4)                 # played as a land
+        self.assertEqual(comp["nonlands"], 1)              # played as a spell
+        self.assertEqual(comp["modal_land_count"], 1)
+        self.assertEqual(comp["land_sources"], 5)          # land drops available
+        self.assertEqual(comp["modal_lands"][0]["name"], "Sink into Stupor // Soporific Spring")
+
     def test_percentages_use_nonland_denominator(self):
         comp = composition(self.deck, self.truth)
         total_pct = round(sum(comp["curve_pct"].values()), 1)
@@ -67,6 +81,11 @@ class LandDetectionTests(unittest.TestCase):
     def test_modal_dfc_front_face_wins(self):
         self.assertFalse(is_land({"tl": "Instant // Land"}))
         self.assertFalse(is_land({"tl": "Legendary Artifact // Land"}))
+
+    def test_modal_dfc_still_has_a_land_face(self):
+        self.assertTrue(has_land_face({"tl": "Instant // Land"}))
+        self.assertTrue(has_land_face({"tl": "Legendary Artifact // Land"}))
+        self.assertFalse(has_land_face({"tl": "Instant // Sorcery"}))
 
     def test_missing_record(self):
         self.assertFalse(is_land(None))

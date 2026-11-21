@@ -99,9 +99,15 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
         if len(f["cards"]) > 8:
             print(f"          ... +{len(f['cards']) - 8} more")
     print()
+    modal = comp["modal_land_count"]
+    modal_note = (f"  +{modal} modal ({', '.join(m['name'].split(' // ')[0] for m in comp['modal_lands'])})"
+                  if modal else "")
     print(f"deck shape  {comp['total']} cards  |  {comp['lands']} lands "
-          f"({comp['basic_lands']} basic, {comp['nonbasic_lands']} nonbasic)  |  "
+          f"({comp['basic_lands']} basic, {comp['nonbasic_lands']} nonbasic){modal_note}  |  "
           f"{comp['nonlands']} nonland")
+    if modal:
+        print(f"  land count  {comp['land_sources']} land sources "
+              f"({comp['lands']} lands + {modal} modal spell/land)")
     if comp["average_mana_value"] is not None:
         print(f"  mana value  avg {comp['average_mana_value']}  median {comp['median_mana_value']}  "
               f"total {comp['mana_value_total']}")

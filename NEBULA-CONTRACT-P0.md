@@ -206,7 +206,11 @@ Two rules that keep the numbers honest:
 3. **Overlap is disclosed, not suppressed (D7).** Role counts are per role and do not sum
    to the deck size. The report lists every card in more than one role, so a card doing
    double duty is visible rather than averaged away.
-4. **Lands count for `ramp` only (D8).** A land is classified like any other card, then
+4. **A modal spell/land counts both ways.** `Instant // Land` is a spell for the curve
+   and the role table (front face decides), *and* a land source in the land count. Both
+   numbers are printed, and the modal cards are named, so the double count is visible:
+   `100 cards | 24 lands + 2 modal | 76 nonland` and `land count 26 land sources`.
+5. **Lands count for `ramp` only (D8).** A land is classified like any other card, then
    filtered to `LAND_ROLES`. Its other hits are printed as *lands not counted as* —
    Bloodstained Mire is a land that tutors, not a tutor. The `ramp` figure always prints
    its split: `27 (25 spells + 2 land)`.
@@ -214,6 +218,5 @@ Two rules that keep the numbers honest:
 ## 10. Not yet decided
 
 - Report delivery target (file, Obsidian, Discord) — deferred per design step 248.
-- Whether a card printed as `Instant // Land` (Sink into Stupor) should be scored as a
-  spell for curve purposes when cast as a land. Current rule: front face decides, so it
-  is a nonland.
+- Whether role coverage should also treat a modal land face as `ramp` when the deck
+  lacks other acceleration. Today roles follow the front face only.

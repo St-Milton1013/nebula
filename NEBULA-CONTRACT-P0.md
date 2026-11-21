@@ -27,6 +27,7 @@ This file is that freeze. Code that contradicts it is wrong, not the contract.
 | D3 | **The simulator answers one question:** probability that this deck can *cast* a named card by turn N. Not "can we win", not "do we see it". One target per run. | No win-rate field anywhere in Nebula. See §5. |
 | D4 | Nebula builds the **pipeline** (P0 → P3 in that order). | Later stages may not be built before their prerequisites. |
 | D5 | Single-deck review; Jin's two-pass critic is the review layer. | Multi-deck is out of scope; `/compare` is not in the pipeline. |
+| D6 | **The role taxonomy is the Scryfall Tagger hierarchy.** Community-built, community-checked; good enough. Roles are Tagger parents, and a card counts for a role when any of its tags inherits that anchor. | No hand-written keyword lists, no per-deck tuning. Lands carry no role and are counted separately. |
 
 ---
 
@@ -174,9 +175,35 @@ of structure is the requirement, not completeness of data (step 243).
 - **Simulator card coverage.** Inert cards in the cEDHData model are a separate problem
   (2026-11-21). A target with no behaviour definition yields a blank, not a rate; raising
   coverage is studied on its own and does not gate P0.
+- **Tag coverage gaps.** Cards the community has not tagged carry no role and are listed
+  by name in every coverage report. The list is evidence, not noise — it says which
+  cards the taxonomy cannot speak about yet.
 - **Laya's role** given 55/70 answers sit below 0.30 confidence.
 
-## 9. Not yet decided
+## 9. Role coverage (D6)
+
+| Role | Tagger anchor | Covers |
+|---|---|---|
+| `ramp` | ramp | rocks, dorks, land ramp |
+| `draw` | card advantage | draw, selection, wheels |
+| `tutor` | tutor | finding a specific card |
+| `removal` | removal | answering a permanent |
+| `counter` | counterspell | answering a spell |
+| `wipe` | sweeper | answering the board |
+| `protection` | protection | keeping your own things alive |
+| `stax` | hate | taxing or denying resources |
+| `recursion` | recursion | graveyard returns |
+
+Two rules that keep the numbers honest:
+
+1. **Ancestry, not string matching.** `tutor-creature-giant` counts as `tutor` because
+   the Tagger tree says so, not because the word appears.
+2. **The denominator is nonland cards.** A land has no role to cover; land count is its
+   own diagnostic. Every report prints classified / nonland, untagged cards by name, and
+   the tag-store version.
+
+## 10. Not yet decided
 
 - Report delivery target (file, Obsidian, Discord) — deferred per design step 248.
-- Deterministic metric definitions (role taxonomy, denominators) — P0-239, next.
+- Whether overlapping roles (counter+removal, stax+protection) may double-count a card
+  in a density figure, or must be reported as distinct coverage.

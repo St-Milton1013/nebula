@@ -16,16 +16,25 @@ from pathlib import Path
 
 from . import legality
 from .cardtruth import CardTruth
+from .decklink import load_link
 from .freeze import write_snapshot
-from .importer import load_deck
+from .importer import Deck, load_deck
+from .roles import RoleClassifier
+from .tagger import Tags
 
 DEFAULT_TRUTH = Path("data/card_truth.json.gz")
+DEFAULT_TAGS = Path("data/oracle_tags.json.gz")
 DEFAULT_SNAPSHOTS = Path("data/snapshots")
 
 
-def run(deck_path: Path, truth_path: Path, snapshot_dir: Path | None, as_json: bool) -> int:
-    deck = load_deck(deck_path)
+def _load(deck_path: Path | None, link: str | None) -> Deck:
+    if link:
+        return load_link(link)
+    return load_deck(deck_path)
 
+
+def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
+        tags_path: Path | None = None) -> int:
     if not truth_path.exists():
         print(f"card truth missing: {truth_path}\n"
               f"build it with: python scripts/build_card_truth.py", file=sys.stderr)
@@ -35,6 +44,15 @@ def run(deck_path: Path, truth_path: Path, snapshot_dir: Path | None, as_json: b
     meta = write_snapshot(deck, snapshot_dir or DEFAULT_SNAPSHOTS,
                           extra={"card_truth": truth.version})
     result = legality.check(deck, truth)
+
+    roles = None
+    if tags_path is not None:
+        if not tags_path.exists():
+            print(f"tag store missing: {tags_path}\n"
+                  f"build it with: python scripts/build_tags.py", file=sys.stderr)
+            return 2
+        classifier = RoleClassifier(Tags.load(tags_path), truth)
+        roles = classifier.classify(deck)
 
     payload = {
         "deck": {
@@ -53,13 +71,16 @@ def run(deck_path: Path, truth_path: Path, snapshot_dir: Path | None, as_json: b
         },
         "legality": result,
     }
+    if roles is not None:
+        payload["roles"] = {k: v for k, v in roles.items() if k != "per_card"}
+        payload["roles"]["per_card"] = roles["per_card"]
 
     if as_json:
         print(json.dumps(payload, indent=2))
         return 0
 
     d = payload["deck"]
-    print(f"deck      {Path(deck_path).name}")
+    print(f"deck      {deck.source}")
     print(f"sha256    {d['sha256']}")
     print(f"cards     {d['total']}  ({d['counts']})")
     print(f"truth     {payload['card_truth']['cards']} cards, version {payload['card_truth']['version']}")
@@ -73,6 +94,18 @@ def run(deck_path: Path, truth_path: Path, snapshot_dir: Path | None, as_json: b
             print(f"          - {c}")
         if len(f["cards"]) > 8:
             print(f"          ... +{len(f['cards']) - 8} more")
+    if roles is not None:
+        cov = roles["coverage"]
+        print()
+        print(f"roles     {roles['status']}  ({cov['classified']}/{cov['nonland']} nonland cards classified, "
+              f"{cov['untagged']} untagged, {cov['lands']} lands)")
+        for role, count in roles["counts"].items():
+            bar = "#" * min(count, 40)
+            print(f"  {role:<11} {count:>3}  {bar}")
+        if roles["untagged"]:
+            print("  untagged:", ", ".join(roles["untagged"][:8]),
+                  "..." if len(roles["untagged"]) > 8 else "")
+
     if d["flags"]:
         print()
         print("import flags:", ", ".join(d["flags"]))
@@ -81,12 +114,19 @@ def run(deck_path: Path, truth_path: Path, snapshot_dir: Path | None, as_json: b
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="P0: import, freeze, validate one deck")
-    ap.add_argument("--deck", required=True, type=Path)
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument("--deck", type=Path, help="path to a text decklist")
+    group.add_argument("--link", help="Moxfield or Archidekt deck URL")
     ap.add_argument("--truth", type=Path, default=DEFAULT_TRUTH)
+    ap.add_argument("--tags", type=Path, default=None,
+                    help="add role coverage from the Tagger store (default when --roles)")
+    ap.add_argument("--roles", action="store_true", help="report role coverage")
     ap.add_argument("--snapshots", type=Path, default=DEFAULT_SNAPSHOTS)
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
-    return run(args.deck, args.truth, args.snapshots, args.json)
+    tags_path = args.tags if args.tags is not None else (DEFAULT_TAGS if args.roles else None)
+    deck = _load(args.deck, args.link)
+    return run(deck, args.truth, args.snapshots, args.json, tags_path)
 
 
 if __name__ == "__main__":

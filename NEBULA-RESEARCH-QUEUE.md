@@ -80,9 +80,18 @@ is stable, reproducible, and named — not how to write them down.
 
 **Mechanism under consideration**
 
-1. **Population.** Exact commander pair, events at or above the floor (D10), rolling
-   window, minimum N lists. The population is a parameter of the answer, not a footnote:
-   "the TyKraum Breach package" is only meaningful inside a stated population.
+1. **Population, widest usable first.** A specificity ladder, because a niche pair cannot
+   support pair-level co-occurrence:
+
+   | Level | Population | Use when |
+   |---|---|---|
+   | `pair` | exact commander pair | the pair has `min_population_lists` lists |
+   | `identity` | every deck of the same colour identity | the pair is too thin and pooling is allowed |
+
+   Publish at the **most specific level that passes stability**, always label the level, and
+   never compare a `pair` package with an `identity` package as though they were the same
+   object. The population is a parameter of the answer, not a footnote: "the TyKraum Breach
+   package" means nothing outside the population it was measured in.
 2. **Edges.** Card↔card weight from the relationship metrics that already exist in
    `codie/analytics` (leverage, lift, PMI, Jaccard). Prefer **leverage** — observed minus
    expected co-occurrence — because PMI and lift explode on rare pairs.
@@ -104,14 +113,22 @@ carries its population, metric version and stability score — so "why is this a
 has an answer that isn't "because someone said so." The failure mode moves from *stale* to
 *unstable*, and step 6 is what covers it.
 
-**The two ways this fails**
+**On the staple blob — corrected.** Fixing the population to a commander pair *is* the
+fix, and leverage finishes it: a card that appears in 98% of the population's lists has an
+expected co-occurrence just as high, so its leverage is ~0 and it forms no edge. The
+mandatory forty dissolve into the baseline rather than clustering into a fake package.
 
-- **Thin samples.** A commander pair with 40 lists cannot support pair-level co-occurrence;
-  a support floor that protects the numbers may also leave no packages at all. Expect
-  popular pairs to produce packages and niche pairs to produce none, and say so rather
-  than lowering the floor.
-- **The staple blob.** High-inclusion cards connect to everything. If the weight is not
-  support-aware, the first "package" discovered is always *the deck*.
+What survives instead is **trivial** clusters — the mana base, the interaction suite every
+list of that identity runs. Three filters handle those rather than one:
+
+- lands are excluded from package membership (they have their own diagnostic),
+- a cluster must contain an **anchor** (combo piece or declared win condition) to be named,
+- a cluster that is merely the top-inclusion cards of the population is flagged as
+  `STAPLE_SUITE`, not presented as a package.
+
+**The remaining risk is thin samples**, which the ladder addresses rather than hides: a
+pooled `identity` package is real but less specific, and the level label is what keeps a
+reader from mistaking one for the other.
 
 **Gating.** Needs §6 tournament ingestion before anything can be computed. That puts D14's
 cuts and adds behind §6, which is a scheduling change worth knowing now rather than later.

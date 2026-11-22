@@ -30,6 +30,14 @@ This file is that freeze. Code that contradicts it is wrong, not the contract.
 | D6 | **The role taxonomy is the Scryfall Tagger hierarchy.** Community-built, community-checked; good enough. Roles are Tagger parents, and a card counts for a role when any of its tags inherits that anchor. | No hand-written keyword lists, no per-deck tuning. Lands carry no role and are counted separately. |
 | D7 | **A card may hold several roles.** Roles are coverage, not buckets: a card that counters and removes counts for both. | Counts are per role, never forced to sum to the deck size, and cards in more than one role are listed so the overlap is visible. |
 | D8 | **A land may hold the `ramp` role.** Land ramp is ramp. | Land ramp is counted in `ramp` and reported with its split (spells vs lands); a land's other role hits are withheld and listed, so a fetchland never reads as a tutor. |
+| D9 | **Private first.** One user (the owner) until further notice; sharing is a switch that is off. | No report is published, so no report owes a third party attribution, quotation rights, or redistribution terms yet. |
+| D10 | **A cEDH event has at least 30 players.** | `nebula.config.json` / `NEBULA_MIN_EVENT_PLAYERS`; the floor is a policy number, adjustable without a code change, and every statistic prints the floor it used. |
+| D11 | **Own decks get full audits; tournament lists are evidence only.** | §6 aggregates tournament lists; it never audits a stranger's intent. |
+| D12 | **The primary plan is declared at audit time**, one line by the pilot. | Nebula tests the declared plan instead of inferring intent; omitting it yields `UNRESOLVED`, not a guess. |
+| D13 | **v1 is evidence only. Jin's two-pass critic ships in 1.1.** | No interpretation layer, no critic, no theory prose in v1. |
+| D14 | **v1 diagnoses; it does not propose cuts or adds.** | Proposals arrive with the package model, not before it. |
+| D15 | **Sending a decklist to Commander Spellbook is approved**, on demand, for the owner's decks. | It is the only egress in the pipeline; nothing else leaves the machine. |
+| D16 | **Reports are archived by version, never rewritten.** | A taxonomy or metric change produces a new report; an old one keeps the numbers it was built with. |
 
 ---
 
@@ -223,7 +231,17 @@ Two rules that keep the numbers honest:
 
 ---
 
-## 11. Sources and rights (research 2026-11-21)
+## 11. Open research
+
+The queue lives in `NEBULA-RESEARCH-QUEUE.md`. Two items were commissioned by these
+decisions and gate work that the contract otherwise allows:
+
+- **R1 — how to recommend a primary plan**, not just accept one. Laya/Jin territory, not a
+  deterministic module. Gates §8 for decks whose plan the pilot cannot state comfortably.
+- **R2 — the package model.** Cards to packages, enablers, outputs, missing conversion
+  steps, and the recommender data plan it will draw on. Gates D14's cuts and adds.
+
+## 12. Sources and rights (research 2026-11-21)
 
 One roster, so a module cannot quietly pick its own source or its own terms.
 

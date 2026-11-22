@@ -115,7 +115,7 @@ PARTIAL — that defect is the reason this rule exists.)
 
 ---
 
-## 5. Simulation contract
+## 5. Simulation contract (parked — see §11)
 
 **The question, and only this one:** `P(this deck can cast card X by turn N)`.
 
@@ -220,3 +220,24 @@ Two rules that keep the numbers honest:
 - Report delivery target (file, Obsidian, Discord) — deferred per design step 248.
 - Whether role coverage should also treat a modal land face as `ramp` when the deck
   lacks other acceleration. Today roles follow the front face only.
+
+---
+
+## 11. Sources and rights (research 2026-11-21)
+
+One roster, so a module cannot quietly pick its own source or its own terms.
+
+| Source | Role | Terms / constraints | Rule |
+|---|---|---|---|
+| **TopDeck.gg** | tournament source of record | attribution required; API data may not be sold, licensed or commercialized; 5 search/min, 50 detail reads/min, 100/min other, 1M docs/day | only sanctioned source for event, standings, decklist and round data |
+| **EDHTop16** | discovery and cross-check | live, has an API; its own statistics and analysis may not be redistributed | link and read; **never copy its computed shares or charts into a report** |
+| **Commander Spellbook** | combo candidates | 80 req/min polite; periodic export preferred for bulk; no data licence beyond the code | `/find-my-combos` gives `uses`/`requires`, no present/missing fields, no rules citations — Nebula derives both |
+| **Scryfall** | card truth and Tagger tags | documented, public | sole source for card fields and role tags (D6) |
+| **Academy Ruins** | internal rule lookup | 3,183 records live; AGPL code, not rules text | internal only: report cites **rule number + Wizards CR PDF, paraphrased**; never paste rule text into a shared report |
+| **Theory corpus** | interpretation input | rights and provenance unresolved; summaries assembled from a compilation, authoring method unknown | **no quoted passages in a shared report**; paraphrase only; source ledger required before promotion (§1.2) |
+| **cEDHData simulator** | castability (parked) | — | 0 of 10 representative win-condition packages had named action support; `P(cast X by T)` is meaningless for those cards until coverage exists |
+
+Two consequences worth stating as rules:
+
+1. **Rules are cited, not copied.** A combo claim carries the rule number and the CR effective date; the explanation is ours. This is licensing, not style.
+2. **The theory layer is paraphrase-only until a source ledger exists.** The corpus fails the §1.2 promotion test today: its summaries cannot be traced to a source passage or an authoring method, so it is evidence for us and not quotation for anyone else.

@@ -73,16 +73,48 @@ extraction" — so the corpus cannot supply definitions either.
 
 So R2 splits:
 
-### R2a — Package definitions (content, not code)
+### R2a — Deriving packages from relationships (D17)
 
-- The plan's own source object argues for a **curated package database** over statistical
-  discovery. Treat that as the leading hypothesis: a package is named, attributed, and
-  hand-maintained, with cards listed and each membership carrying a one-line reason.
-- Open: **who authors them.** Recommendation: the owner, incrementally, from decks actually
-  audited — a package earns its entry the third time it shows up, not before. That keeps
-  the database honest and small.
-- Open: how a package binds to a commander pair (TyKraum consult is not TyKraum stax).
-- Gates: §8, and everything D14 defers.
+Packages are **computed, not authored**. The question is how to compute them so the answer
+is stable, reproducible, and named — not how to write them down.
+
+**Mechanism under consideration**
+
+1. **Population.** Exact commander pair, events at or above the floor (D10), rolling
+   window, minimum N lists. The population is a parameter of the answer, not a footnote:
+   "the TyKraum Breach package" is only meaningful inside a stated population.
+2. **Edges.** Card↔card weight from the relationship metrics that already exist in
+   `codie/analytics` (leverage, lift, PMI, Jaccard). Prefer **leverage** — observed minus
+   expected co-occurrence — because PMI and lift explode on rare pairs.
+3. **Support floor.** A pair must appear in a minimum share of the population's lists or it
+   is not an edge. Without this, a pair seen once carries an enormous lift and every
+   package is noise. This is the single most important parameter.
+4. **Clustering.** Community detection over that graph, with a minimum community size and
+   a resolution parameter.
+5. **Naming.** A community that contains a Spellbook combo piece or a declared win
+   condition takes **that** name. Communities without an anchor stay unnamed: reported by
+   dominant Tagger role and card count, flagged as `UNNAMED_CLUSTER`. Naming is the one
+   step that cannot be made objective, so the design defers to an anchor rather than to
+   whoever writes the report.
+6. **Stability.** Bootstrap-resample the population's lists; publish a package only if the
+   cluster recurs in most resamples. Unstable clusters are dropped, not labelled.
+
+**What this buys, honestly.** No stale list, no authoring labour, and every package
+carries its population, metric version and stability score — so "why is this a package?"
+has an answer that isn't "because someone said so." The failure mode moves from *stale* to
+*unstable*, and step 6 is what covers it.
+
+**The two ways this fails**
+
+- **Thin samples.** A commander pair with 40 lists cannot support pair-level co-occurrence;
+  a support floor that protects the numbers may also leave no packages at all. Expect
+  popular pairs to produce packages and niche pairs to produce none, and say so rather
+  than lowering the floor.
+- **The staple blob.** High-inclusion cards connect to everything. If the weight is not
+  support-aware, the first "package" discovered is always *the deck*.
+
+**Gating.** Needs §6 tournament ingestion before anything can be computed. That puts D14's
+cuts and adds behind §6, which is a scheduling change worth knowing now rather than later.
 
 ### R2b — Relationship metrics (adapting prior art)
 

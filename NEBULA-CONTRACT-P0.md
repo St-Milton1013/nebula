@@ -38,6 +38,7 @@ This file is that freeze. Code that contradicts it is wrong, not the contract.
 | D14 | **v1 diagnoses; it does not propose cuts or adds.** | Proposals arrive with the package model, not before it. |
 | D15 | **Sending a decklist to Commander Spellbook is approved**, on demand, for the owner's decks. | It is the only egress in the pipeline; nothing else leaves the machine. |
 | D16 | **Reports are archived by version, never rewritten.** | A taxonomy or metric change produces a new report; an old one keeps the numbers it was built with. |
+| D17 | **Packages are derived, not authored.** A package is a stable cluster of cards over a defined tournament population (commander pair, ≥30 players, rolling window), computed from relationship metrics and published only if it survives resampling. | No hand-maintained list to rot. Every package carries its population, metric version and stability score, and is re-derived rather than edited. |
 
 ---
 
@@ -238,8 +239,9 @@ decisions and gate work that the contract otherwise allows:
 
 - **R1 — how to recommend a primary plan**, not just accept one. Laya/Jin territory, not a
   deterministic module. Gates §8 for decks whose plan the pilot cannot state comfortably.
-- **R2 — the package model.** Cards to packages, enablers, outputs, missing conversion
-  steps, and the recommender data plan it will draw on. Gates D14's cuts and adds.
+- **R2 — the package model.** Packages are derived from relationships (D17), so this is a
+  clustering and stability problem rather than a content-authoring one. Gates D14's cuts
+  and adds, and cannot start until §6 tournament ingestion exists.
 
 ## 12. Sources and rights (research 2026-11-21)
 

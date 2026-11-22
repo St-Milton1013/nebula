@@ -35,6 +35,29 @@ class ConfigTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load(p, env={})
 
+    def test_package_derivation_defaults(self):
+        cfg = load(env={})
+        self.assertEqual(cfg.min_population_lists, 50)
+        self.assertAlmostEqual(cfg.support_floor, 0.05)
+        self.assertAlmostEqual(cfg.stability_threshold, 0.80)
+        self.assertTrue(cfg.allow_colour_pooling)
+
+    def test_float_and_bool_env_parsing(self):
+        cfg = load(env={
+            "NEBULA_SUPPORT_FLOOR": "0.10",
+            "NEBULA_STABILITY_THRESHOLD": "0.9",
+            "NEBULA_ALLOW_COLOUR_POOLING": "false",
+        })
+        self.assertAlmostEqual(cfg.support_floor, 0.10)
+        self.assertAlmostEqual(cfg.stability_threshold, 0.9)
+        self.assertFalse(cfg.allow_colour_pooling)
+
+    def test_bool_accepts_common_spellings(self):
+        for raw, expected in (("true", True), ("1", True), ("off", False), ("no", False)):
+            with self.subTest(raw=raw):
+                cfg = load(env={"NEBULA_SHARE_REPORTS": raw})
+                self.assertEqual(cfg.share_reports, expected)
+
     def test_event_floor_boundary(self):
         cfg = Config(min_event_players=30)
         self.assertFalse(is_cedh_event(29, cfg))

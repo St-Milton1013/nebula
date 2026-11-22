@@ -26,6 +26,15 @@ class Config:
     # obligations it cannot meet.
     share_reports: bool = False
 
+    # D17: package derivation. These three are the difference between a stable
+    # cluster and noise, so they are policy numbers, not constants.
+    min_population_lists: int = 50      # lists needed to compute at all
+    support_floor: float = 0.05         # a card pair must appear in 5% of lists
+    stability_threshold: float = 0.80   # share of resamples a cluster must recur in
+
+    # D17: fall back to colour identity when a commander pair is too thin.
+    allow_colour_pooling: bool = True
+
     def as_dict(self) -> dict:
         return asdict(self)
 
@@ -46,9 +55,18 @@ def load(path: str | Path | None = None, env: dict | None = None) -> Config:
 
     for field in fields(Config):
         key = ENV_PREFIX + field.name.upper()
-        if key in env:
-            raw = env[key]
-            values[field.name] = raw if isinstance(field.default, bool) else int(raw)
+        if key not in env:
+            continue
+        raw = env[key]
+        default = field.default
+        if isinstance(default, bool):
+            values[field.name] = str(raw).strip().lower() in ("1", "true", "yes", "on")
+        elif isinstance(default, float):
+            values[field.name] = float(raw)
+        elif isinstance(default, int):
+            values[field.name] = int(raw)
+        else:
+            values[field.name] = str(raw)
 
     return Config(**values)
 

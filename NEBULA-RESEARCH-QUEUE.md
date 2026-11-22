@@ -143,6 +143,59 @@ cuts and adds behind §6, which is a scheduling change worth knowing now rather 
   ingestion (§6) is not built.
 - Gates: the evidence behind any future cut/add proposal.
 
+## R5 — Recommendation engine at cEDH sample sizes
+
+**Why.** D14 defers cuts and adds until packages exist, and the thing that makes a
+recommendation credible is related-card evidence: what else the population plays, what the
+slot still needs, what the candidate completes. This is the largest unbuilt piece.
+
+**Prior art already in Codie.** `codie/recommendations/` has nine modules whose docstrings
+are explicit that they hold *statistics primitives and do not generate candidates*. What
+they do fix is the shape:
+
+```
+score =  commander_lift + inclusion_rate + confidence + similarity
+       + package_completion + combo_completion + tournament_performance
+       + simulation_delta
+       - generic_staple_penalty - low_sample_penalty
+```
+
+candidate types: `commander_specific`, `source_label_specific`, `package_specific`,
+`combo_completion`, `generic_staple`, `meta_tech`. The `low_sample_penalty` term means the
+volume problem was anticipated, not discovered.
+
+**What transfers at cEDH scale, and what doesn't.** The eight positive terms split cleanly:
+
+| Term | At small N | Note |
+|---|---|---|
+| `package_completion` | works | volume-free; needs D17 packages |
+| `combo_completion` | works now | volume-free; Spellbook's `almostIncluded` buckets are a ready signal — 74 on the 100-card fixture |
+| `tournament_performance` | works, with discipline | needs top-cut vs field **within the same population**, never raw win rate |
+| `commander_lift`, `inclusion_rate` | noisy | below ~100 lists per pair the CI is wider than the effect; floor it and label it |
+| `similarity` | weak | Jaccard between 100-card lists is dominated by staples |
+| `confidence` | keep | it is the label on the others, not a signal itself |
+| `simulation_delta` | permanently 0 | D3 parks the simulator; the term exists and can never fire |
+
+So the recommendation order at cEDH scale inverts the EDHREC one: **structure first,
+outcomes second, co-occurrence last.** EDHREC can lead with co-occurrence because it has
+millions of lists; we have hundreds per pair and should lead with what the deck is missing.
+
+**The volume substitute.** EDHREC does not know who won. TopDeck does. That is the trade:
+small N, but every list carries a result — which is why `tournament_performance` is worth
+more here than `inclusion_rate`, provided the population and the cut are stated.
+
+**Open**
+
+- Is *Recommander* a specific product with a scoring method worth studying, or the general
+  class of co-occurrence recommenders? If it is a product, its scoring description belongs
+  in this item.
+- Gate the volume terms (show nothing below the floor) or show them with wide intervals?
+  Recommendation: gate. A number whose interval spans the decision is not evidence.
+
+**Gates.** D14's cuts and adds; depends on §6 (populations) and D17 (packages).
+
+---
+
 ## R3 — Tagger coverage at scale
 
 **Why.** Role coverage came out 90% on two decks, and the misses clustered on cEDH

@@ -184,11 +184,42 @@ millions of lists; we have hundreds per pair and should lead with what the deck 
 small N, but every list carries a result — which is why `tournament_performance` is worth
 more here than `inclusion_rate`, provided the population and the cut are stated.
 
+**Recommander (recommander.cards), inspected 2026-11-22**
+
+Product, not a reference design. Its aggregate is *all* Commander decks, not cEDH: 4,953
+Kraum // Tymna decks indexed, against 595 complete events in our own cache. Two
+consequences follow.
+
+*What it is.* A deck-corpus recommender. Public API, no key:
+`POST https://api.recommander.cards/public-release/api/decks/recommend/top`, returns up to
+200 ranked cards in ~0.4s. A test against the frozen Ishai/Rograkh fixture returned 0 cards
+already in the deck, 0 outside the commanders' colour identity, 0 unresolved — and a mix of
+cEDH-playable (Red Elemental Blast, Pyroblast, Grim Monolith, Wheel of Fortune, Dispel,
+Dizzy Spell) and clearly casual picks (The Queen of Dale, Samut, Steal Enchantment). That is
+what an all-Commander model produces on a cEDH list: legal, sensibly filtered, wrong at the
+margins that matter.
+
+*What that means for us.* Their co-occurrence volume comes from deck lists, not results, and
+we are unlikely ever to match it from tournament data alone. So the goal is not to rebuild
+Recommander. It is to use it as a **candidate generator** and re-rank with cEDH evidence:
+
+| API feature | What it does for us |
+|---|---|
+| `candidate_step: explicit` | rank only cards that appear in our tournament population — their model inside our candidate space |
+| `candidate_step: set` | new-set candidates for meta-tech, scoped to colour identity |
+| `weighted_deck` (-10..10) | the declared plan (D12) expressed as weights — combo pieces up, ramp down, and the recommendations follow the intent |
+| card page `Replaced By` / `Same Job` | replacement coverage, the thing a cut analysis needs and we have no data for |
+
+*Caveats.* `score` is comparable only within one response and has no fixed range. Their docs
+say the public release may serve a model trained on a subset of their data. Terms: personal,
+non-commercial, attribution, and explicitly no scraping — the API is the sanctioned path.
+Sending a decklist there is a new egress, the same class as Spellbook (D15) and needing the
+same explicit yes.
+
 **Open**
 
-- Is *Recommander* a specific product with a scoring method worth studying, or the general
-  class of co-occurrence recommenders? If it is a product, its scoring description belongs
-  in this item.
+- Extend D15 to cover Recommander as an approved egress?
+- Candidate generation as its own slice, feeding the re-ranker, or fold it into R5 proper?
 - Gate the volume terms (show nothing below the floor) or show them with wide intervals?
   Recommendation: gate. A number whose interval spans the decision is not evidence.
 

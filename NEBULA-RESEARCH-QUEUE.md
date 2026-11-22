@@ -216,10 +216,49 @@ non-commercial, attribution, and explicitly no scraping — the API is the sanct
 Sending a decklist there is a new egress, the same class as Spellbook (D15) and needing the
 same explicit yes.
 
+**Their formula: not published, but measurable.** Three probes on the live API settle the class:
+
+| Probe | Result | What it proves |
+|---|---|---|
+| commander only vs commander + 98-card deck | **0/20 top-20 overlap** | scoring is deck-conditioned, not a commander staples table |
+| weight three combo pieces +8 | 9 of the top 20 changed | per-card weights work, positives pull hard |
+| weight the same pieces -8 | 2 of the top 20 changed | negative weights push away much more weakly |
+
+Plus the published behaviour: cards are ranked by relevance with staples set aside, and the
+card pages bucket them Definitive / Staple / Unique / Other over a lift distribution.
+
+So the class is lift-based, deck-conditioned, with staple suppression — standard statistics,
+implementable locally. (A caveat from the probe: Brain Freeze and Underworld Breach sit in
+the fixture deck already, so their absence from a recommendations list is duplicate
+suppression, not a modelling failure. Only Lion's Eye Diamond was genuinely unranked.)
+
+**Consequence: build our own, do not call theirs at runtime.** Their population is casual
+Commander decks; a copy of their formula would import assumptions we cannot use (volume, no
+outcomes). Their API stays useful as a *benchmark* — rank-correlate our scorer against theirs
+on the same deck, and expect agreement on generic lists while diverging where cEDH evidence
+overrides. That also removes the egress question entirely: no decklist leaves the machine.
+
+**Formula skeleton for cEDH scale**
+
+```
+score(c | deck D, population P) =
+      w1 * deck_conditioned_lift(c, D, P)   # mean lift of c against D's own cards
+    + w2 * package_fit(c, D, P)             # D17 cluster membership
+    + w3 * combo_completion(c, D)           # Spellbook almostIncluded, volume-free
+    + w4 * outcome_lift(c, P)               # top-cut vs field inside P
+    - w5 * staple_penalty(c, P)             # high support, low lift
+    - w6 * small_sample_penalty(n)          # the low_sample term, per D17 knobs
+    - w7 * redundancy(c, D)                 # role already saturated in this deck
+```
+
+Every term is computable from what Nebula already owns or will own after §6, and the
+weights are policy numbers of the same kind as the support floor.
+
 **Open**
 
-- Extend D15 to cover Recommander as an approved egress?
-- Candidate generation as its own slice, feeding the re-ranker, or fold it into R5 proper?
+- Weight values: fit them, or hand-set and publish? Recommendation: hand-set two or three
+  presets, publish them, and only fit once there is an outcome column to fit against.
+- Whether to keep a benchmark-only Recommander call in the regression suite, opt-in.
 - Gate the volume terms (show nothing below the floor) or show them with wide intervals?
   Recommendation: gate. A number whose interval spans the decision is not evidence.
 

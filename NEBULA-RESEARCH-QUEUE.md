@@ -216,43 +216,67 @@ non-commercial, attribution, and explicitly no scraping — the API is the sanct
 Sending a decklist there is a new egress, the same class as Spellbook (D15) and needing the
 same explicit yes.
 
-**Their formula: not published, but measurable.** Three probes on the live API settle the class:
+**How it actually works (author's own account, 2026-11-22).** Not a lift ranking — a learned
+model:
 
-| Probe | Result | What it proves |
-|---|---|---|
-| commander only vs commander + 98-card deck | **0/20 top-20 overlap** | scoring is deck-conditioned, not a commander staples table |
-| weight three combo pieces +8 | 9 of the top 20 changed | per-card weights work, positives pull hard |
-| weight the same pieces -8 | 2 of the top 20 changed | negative weights push away much more weakly |
+- **Corpus:** 600,000+ unique decks, continuously re-ingested from Moxfield and Archidekt
+  public APIs *with permission*, restricted to recently-updated lists so new cards appear.
+- **Model:** collaborative filtering over a deck × card matrix, split into 32 colour-identity
+  blocks, with a low-rank (SVD-style) approximation, implemented in Vowpal Wabbit's online
+  learner so new decks update it continuously.
+- **Training:** for each 100-card list, 100 held-out examples — 99 cards plus one candidate,
+  labelled "belongs."
+- **Negatives are mined, not free.** Without explicit "does not belong" labels the model
+  learns that everything associates with everything. Their approximation: per deck, sample a
+  few of the most popular cards *in that identity* that the deck omits, and label them
+  negatives.
+- **Staples are scaled down during training** by popularity, so their frequent occurrence
+  doesn't dominate. Their stated lesson: you cannot rely on per-commander data alone; once a
+  plan is formed the specific list has to win.
 
-Plus the published behaviour: cards are ranked by relevance with staples set aside, and the
-card pages bucket them Definitive / Staple / Unique / Other over a lift distribution.
+**Correction to an earlier note here.** Probing the API (commander-only vs full deck sharing
+0 of the top 20) suggested "deck-conditioned lift." The *effect* is deck-conditioning, but
+the mechanism is a learned low-rank model, not aggregated lift. The lift numbers the site
+displays are deck-level descriptors, not the ranking function.
 
-So the class is lift-based, deck-conditioned, with staple suppression — standard statistics,
-implementable locally. (A caveat from the probe: Brain Freeze and Underworld Breach sit in
-the fixture deck already, so their absence from a recommendations list is duplicate
-suppression, not a modelling failure. Only Lion's Eye Diamond was genuinely unranked.)
-
-**Consequence: build our own, do not call theirs at runtime.** Their population is casual
-Commander decks; a copy of their formula would import assumptions we cannot use (volume, no
-outcomes). Their API stays useful as a *benchmark* — rank-correlate our scorer against theirs
-on the same deck, and expect agreement on generic lists while diverging where cEDH evidence
-overrides. That also removes the egress question entirely: no decklist leaves the machine.
-
-**Formula skeleton for cEDH scale**
+**Their lift definition is worth taking**, because it is the right baseline and it is
+computable from our own data:
 
 ```
-score(c | deck D, population P) =
-      w1 * deck_conditioned_lift(c, D, P)   # mean lift of c against D's own cards
-    + w2 * package_fit(c, D, P)             # D17 cluster membership
-    + w3 * combo_completion(c, D)           # Spellbook almostIncluded, volume-free
-    + w4 * outcome_lift(c, P)               # top-cut vs field inside P
-    - w5 * staple_penalty(c, P)             # high support, low lift
-    - w6 * small_sample_penalty(n)          # the low_sample term, per D17 knobs
-    - w7 * redundancy(c, D)                 # role already saturated in this deck
+lift(card c, commander C) = share of C's lists running c
+                          / share of all lists running c, inside the colour identity
 ```
 
-Every term is computable from what Nebula already owns or will own after §6, and the
-weights are policy numbers of the same kind as the support floor.
+High lift = associated with the commander. Around zero = staple. Negative = the commander's
+decks avoid it. From that they derive `commander synergy` (mean lift of the deck, −100% to
++100%), `synergy range` (gulf between highest and lowest lift card), and `commander
+staples / anti-staples` (share of deck cards above/below a threshold). All four are cheap for
+us and give a deck-versus-population read the audit currently lacks.
+
+**The cut lesson, which is the most valuable thing in either transcript.** Ranking your own
+cards by "would I include this" puts theme cards and staples at the top, and leaves pet cards,
+pet interaction and silver bullets at the bottom — *the exact cards you must not cut*. What
+you actually cut is **redundancy**: cards that score high precisely because the deck already
+has enough of that effect. Their model cannot see this, because it produces one association
+number and has no sense of "too much of a good thing."
+
+That is a role-coverage problem, not a similarity problem — which is why `redundancy(c, D)` in
+the skeleton is not a weak penalty but the **primary cut signal**, and why D14's deferral
+until packages and coverage exist was the right call.
+
+**What we cannot and should not copy:** six hundred thousand decks, a trained low-rank model,
+and an ingestion permission we do not hold. Their corpus is deck lists without results; ours
+is a smaller population with standings. The competitive position is not to beat them at
+co-occurrence — it is to add the two things they structurally lack: **outcomes** and
+**structure** (packages, combos, role coverage).
+
+**Open**
+
+- Weight values: fit them, or hand-set and publish? Recommendation: hand-set two or three
+  presets, publish them, and only fit once there is an outcome column to fit against.
+- Whether to keep a benchmark-only call in the regression suite, opt-in.
+- Negative mining for our population: per list, sample popular in-identity cards the list
+  omits. Needed before any association model, and cheap.
 
 **Open**
 

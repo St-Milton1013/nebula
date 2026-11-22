@@ -25,11 +25,22 @@ def canonical(deck: Deck) -> str:
     return "\n".join(lines) + "\n"
 
 
+def normalised_text(deck: Deck) -> str:
+    """The source text as the parser saw it: CRLF collapsed, nothing else changed.
+
+    A byte hash of the file is not stable - git rewrites line endings on
+    checkout, so the same deck hashes differently on a different box. Hash what
+    the pipeline actually consumed instead, and hash the canonical form
+    separately for identity.
+    """
+    return deck.raw.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def fingerprint(deck: Deck) -> dict:
     canon = canonical(deck)
     return {
         "deck_sha256": hashlib.sha256(canon.encode("utf-8")).hexdigest(),
-        "raw_sha256": hashlib.sha256(deck.raw.encode("utf-8")).hexdigest(),
+        "text_sha256": hashlib.sha256(normalised_text(deck).encode("utf-8")).hexdigest(),
         "total": deck.total,
         "counts": deck.counts(),
         "cards": len(deck.entries),

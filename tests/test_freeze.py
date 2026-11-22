@@ -18,6 +18,19 @@ class FreezeTests(unittest.TestCase):
         b = parse_decklist("1 Mana Crypt\n")
         self.assertNotEqual(fingerprint(a)["deck_sha256"], fingerprint(b)["deck_sha256"])
 
+    def test_line_endings_do_not_change_the_fingerprint(self):
+        # git rewrites CRLF on checkout; a byte hash of the file would drift.
+        lf = parse_decklist("Commander\n1 Rograkh, Son of Rohgahh\nMainboard\n1 Sol Ring\n")
+        crlf = parse_decklist(
+            "Commander\r\n1 Rograkh, Son of Rohgahh\r\nMainboard\r\n1 Sol Ring\r\n")
+        self.assertEqual(fingerprint(lf)["deck_sha256"], fingerprint(crlf)["deck_sha256"])
+        self.assertEqual(fingerprint(lf)["text_sha256"], fingerprint(crlf)["text_sha256"])
+
+    def test_fingerprint_has_no_volatile_byte_hash(self):
+        fp = fingerprint(parse_decklist("1 Sol Ring\n"))
+        self.assertIn("text_sha256", fp)
+        self.assertNotIn("raw_sha256", fp)
+
     def test_snapshot_is_written_once_and_idempotent(self):
         deck = parse_decklist("Commander\n1 Rograkh, Son of Rohgahh\nMainboard\n1 Sol Ring\n")
         with tempfile.TemporaryDirectory() as tmp:

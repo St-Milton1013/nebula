@@ -61,7 +61,7 @@ def run(deck: Deck, truth_path: Path, snapshot_dir: Path | None, as_json: bool,
         "deck": {
             "source": deck.source,
             "sha256": meta["deck_sha256"],
-            "raw_sha256": meta["raw_sha256"],
+            "text_sha256": meta["text_sha256"],
             "total": meta["total"],
             "counts": meta["counts"],
             "flags": meta["flags"],

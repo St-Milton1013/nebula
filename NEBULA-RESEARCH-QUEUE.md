@@ -46,23 +46,53 @@ recommendation half of triage. Does **not** gate v1.
 89–105 of the design are the specification, and they are demanding: packages, enablers,
 outputs, dependencies, missing conversion steps, resource collisions, orphaned cards.
 
-**Questions to settle**
+**Prior art, reviewed 2026-11-22.** Codie holds an approved-deferred plan —
+`Projects/Codie/Plans/APPROVED TBD - Relationship and Package Intelligence.md`
+(`APPROVED_TBD / NOT ACTIVE`, Phase40K core externally accepted). It is reference for
+Nebula, not authority: it activates nothing here (D1, D2).
 
-- What is the minimum package record? Candidate: `{name, cards[], enabler[], output,
-  requires[]}`, with every membership carrying a one-line reason (never a bare list).
-- How are packages identified for a new deck: declared by the pilot, derived from combo
-  variants, matched against a template library, or a mix? D12 says declared for the plan;
-  packages are finer-grained than the plan and may be derivable.
-- What does "missing conversion step" mean operationally — an output with no consumer?
-  An engine with no payoff? This needs a definition that a test can check.
-- How does a cut get proposed without the audit pretending to know the pilot's intent?
+What that plan fixes as vocabulary, worth adopting as-is:
 
-**Inputs already owned.** The Codie recommender data plan (role/relationship weighting,
-slot-donor comparison) is prior art for this and should be read before designing fresh.
+| Constraint | Meaning for us |
+|---|---|
+| 7 relationship families | card↔card, card↔package, card↔commander, package↔package, card↔combo, card↔meta, package↔strategy |
+| 4 basis kinds | rules/function, observed tournament evidence, source-authored strategic claim, derived analysis — every relationship names one |
+| confidence only for interpretive links | a rules fact is not "80% confident" |
+| no graph database as canonical storage | graph views are rebuildable indexes over file-backed records |
+| replacement coverage in any removal/addition analysis | a cut must account for what the slot still needs |
+| metric lineage | every derived number reproducible from snapshot + version |
 
-**Gates.** D14's cuts and adds; §8; the whole triage layer.
+**The gap that matters.** `codie/analytics/relationship_metrics.py` and
+`relationship_population.py` already implement the arithmetic — support, directional
+confidence, dependence delta, lift, leverage, Jaccard, PMI over typed endpoints that
+include `package` and `commander_pair`, with population manifests and observation
+statuses. **The arithmetic exists; the packages do not.** The plan's own dependency list
+says so: *attributed package definitions*. The theory node for package design
+(`nodes/01_Topics/30-package-design.md`) is an empty scaffold — "content pending
+extraction" — so the corpus cannot supply definitions either.
 
----
+So R2 splits:
+
+### R2a — Package definitions (content, not code)
+
+- The plan's own source object argues for a **curated package database** over statistical
+  discovery. Treat that as the leading hypothesis: a package is named, attributed, and
+  hand-maintained, with cards listed and each membership carrying a one-line reason.
+- Open: **who authors them.** Recommendation: the owner, incrementally, from decks actually
+  audited — a package earns its entry the third time it shows up, not before. That keeps
+  the database honest and small.
+- Open: how a package binds to a commander pair (TyKraum consult is not TyKraum stax).
+- Gates: §8, and everything D14 defers.
+
+### R2b — Relationship metrics (adapting prior art)
+
+- Codie's metric families are sufficient for "how often do these two cards appear
+  together in winning lists of this pair."
+- Nebula must decide what to take as a *design* (metric definitions, packet shape,
+  population manifest) while writing its own code (D1: no `codie.*` imports).
+- Open: whether to compute these at all in v1, given D14 and the fact that tournament
+  ingestion (§6) is not built.
+- Gates: the evidence behind any future cut/add proposal.
 
 ## R3 — Tagger coverage at scale
 
